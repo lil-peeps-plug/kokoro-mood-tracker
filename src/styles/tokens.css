@@ -1,76 +1,141 @@
-@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;600;700&display=swap");
+/*
+  ==========================================================================
+  Kokoro — design tokens
+  ==========================================================================
+  Tender, soft palette. Warm cream highlights, dusty rose primary. Surfaces
+  stay fully opaque; transparency only appears in the glass overlays.
+  Color space is oklch (perceptually uniform).
+  ==========================================================================
+*/
 
 :root {
-  /* ─── Color ─────────────────────────────────────────── */
-  --color-background: oklch(0.13 0.035 275);
-  --color-surface: oklch(0.18 0.045 275);
-  --color-surface-raised: oklch(0.22 0.05 275);
+  /* --- Lantern overlay placement ----------------------------------------
+     Tuned for bg.webp — lantern bottom-right. left: 100% puts the glow's
+     centre on the right edge of the viewport, so only the left half of
+     the bloom shows on screen; the rest hangs off the side. Top moved
+     up so the visible half sits over the painted lantern body.
+  */
+  --lantern-top: 82%;
+  --lantern-left: 100%;
+  --lantern-size: 480px;
+  --lantern-core-size: 140px;
 
-  --color-primary: oklch(0.55 0.18 320);
-  --color-primary-hover: oklch(0.62 0.19 320);
-  --color-accent: oklch(0.85 0.12 280);
+  /* --- Color palette ---------------------------------------------------- */
 
-  --color-text-primary: oklch(0.96 0.015 285);
-  --color-text-muted: oklch(0.68 0.03 285);
+  /* Outer (off-stage) backdrop — desktop phone-frame surround */
+  --color-stage: oklch(0.05 0.018 320);
 
-  --color-border-subtle: oklch(0.3 0.04 275 / 0.5);
+  /* Surfaces — slight rose undertone, warmer than before */
+  --color-bg-base:        oklch(0.11 0.022 320);
+  --color-card:           oklch(0.135 0.022 320);          /* opaque card */
+  --color-card-edge:      oklch(0.34 0.04 320 / 0.42);
+  --color-surface:        oklch(0.17 0.03 320 / 0.86);     /* glass overlays */
+  --color-surface-elev:   oklch(0.21 0.035 320 / 0.93);
+  --color-surface-hi:     oklch(0.27 0.045 320 / 0.95);
+  --color-input:          oklch(0.10 0.022 320);
 
-  /* ─── Shadow / Glow ─────────────────────────────────── */
-  --shadow-glow: 0 0 24px oklch(0.55 0.18 320 / 0.35),
-    0 0 48px oklch(0.85 0.12 280 / 0.15);
-  --shadow-soft: 0 4px 16px oklch(0.05 0.02 275 / 0.5);
-  --shadow-elevated: 0 12px 32px oklch(0.05 0.02 275 / 0.6);
+  /* Hairline edges */
+  --color-border:         oklch(0.42 0.04 320 / 0.40);
+  --color-edge-hi:        oklch(1 0 0 / 0.06);
+  --color-edge-lo:        oklch(0 0 0 / 0.18);
 
-  /* ─── Typography ────────────────────────────────────── */
-  --font-sans: "Noto Sans JP", system-ui, -apple-system, "Segoe UI", sans-serif;
+  /* Text — warm cream */
+  --color-text:           oklch(0.96 0.014 75);
+  --color-text-muted:     oklch(0.78 0.022 75);
+  --color-text-faint:     oklch(0.62 0.028 75);
 
-  --font-weight-light: 300;
-  --font-weight-regular: 400;
-  --font-weight-medium: 500;
-  --font-weight-semibold: 600;
-  --font-weight-bold: 700;
+  /* Brand — chill dusty rose & warm cream. Pink dialled WAY down on
+     chroma so it reads as a muted mauve / dusty pink, not vivid. */
+  --color-primary:        oklch(0.62 0.05 8);
+  --color-primary-hover:  oklch(0.68 0.055 8);
+  --color-primary-on:     oklch(0.96 0.014 75);            /* light text on primary */
+  --color-accent:         oklch(0.88 0.05 75);             /* warm cream */
 
-  --font-size-xs: 0.75rem;
-  --font-size-sm: 0.875rem;
-  --font-size-base: 1rem;
-  --font-size-lg: 1.125rem;
-  --font-size-xl: 1.25rem;
-  --font-size-2xl: 1.5rem;
-  --font-size-3xl: 1.875rem;
+  /* Status */
+  --color-error:          oklch(0.72 0.15 25);
+  --color-success:        oklch(0.78 0.10 145);
+  --color-warm-glow:      oklch(0.90 0.16 75);
 
-  --line-height-tight: 1.2;
-  --line-height-normal: 1.5;
-  --line-height-relaxed: 1.7;
+  /* Scrim — much lighter so the background painting actually shows */
+  --scrim-top:            oklch(0.10 0.02 320 / 0.02);
+  --scrim-bottom:         oklch(0.05 0.02 320 / 0.28);
 
-  --letter-spacing-tight: -0.01em;
-  --letter-spacing-wide: 0.04em;
+  /* Desktop phone-frame bezel */
+  --phone-bezel:          oklch(0.55 0.06 320 / 0.42);
 
-  /* ─── Spacing ───────────────────────────────────────── */
-  --space-0: 0;
+  /* --- Typography ------------------------------------------------------- */
+  /* Multi-script font stacks. Browser falls through to whichever
+     family has the glyph it needs, per character. */
+
+  /* Body / UI — clean, neutral sans. */
+  --font-display:
+    'Noto Sans', 'Noto Sans JP', 'Noto Sans Georgian',
+    system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  /* Display / brand / titles — elegant high-contrast serif paired with
+     brush-style Japanese and Georgian serif faces. Adds character to
+     headlines without making body text feel ornate. */
+  --font-serif:
+    'Cormorant Garamond',
+    'Noto Serif JP', 'Noto Serif Georgian',
+    Georgia, 'Times New Roman', serif;
+
+  --font-mono:    ui-monospace, 'SF Mono', Consolas, monospace;
+
+  --fs-xs:   0.75rem;
+  --fs-sm:   0.875rem;
+  --fs-base: 1rem;
+  --fs-md:   1.125rem;
+  --fs-lg:   1.375rem;
+  --fs-xl:   1.75rem;
+  --fs-2xl:  2.25rem;
+
+  /* --- Spacing scale ---------------------------------------------------- */
   --space-1: 0.25rem;
   --space-2: 0.5rem;
   --space-3: 0.75rem;
   --space-4: 1rem;
-  --space-5: 1.25rem;
-  --space-6: 1.5rem;
-  --space-8: 2rem;
-  --space-10: 2.5rem;
-  --space-12: 3rem;
-  --space-16: 4rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-8: 3rem;
+  --space-10: 4rem;
 
-  /* ─── Radius ────────────────────────────────────────── */
-  --radius-xs: 4px;
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 18px;
-  --radius-xl: 24px;
+  /* --- Radii ------------------------------------------------------------ */
+  --radius-sm:   8px;
+  --radius-md:   14px;
+  --radius-lg:   22px;
+  --radius-xl:   32px;
   --radius-full: 9999px;
 
-  /* ─── Transition ────────────────────────────────────── */
-  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
-  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  /* --- Layout ----------------------------------------------------------- */
+  --tab-bar-height:    68px;
+  --vis-height:        28px;     /* visualizer strip above the tab bar */
+  --topbar-icon-size:  30px;     /* exit / music / lang pill size */
+  --content-max-w:     32rem;
 
-  --transition-fast: 120ms var(--ease-out);
-  --transition-base: 220ms var(--ease-out);
-  --transition-slow: 400ms var(--ease-in-out);
+  /* Phone-frame size (desktop only — iPhone 15 Pro CSS viewport) */
+  --phone-w: 393px;
+  --phone-max-h: 852px;
+
+  /* --- Safe-area insets ------------------------------------------------ */
+  --safe-top:    env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left:   env(safe-area-inset-left, 0px);
+  --safe-right:  env(safe-area-inset-right, 0px);
+
+  /* --- Motion ----------------------------------------------------------- */
+  /* Apple-style easing — soft landings, no hard stops. Durations sit a
+     touch longer than typical web defaults so everything feels unhurried. */
+  --ease-out:    cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in:     cubic-bezier(0.64, 0, 0.78, 0);
+  --ease-glide:  cubic-bezier(0.45, 0, 0.55, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* Durations bumped once more — user explicitly asked for smoother
+     transitions everywhere. Each tier is ~20% longer than before so
+     things glide a touch more without feeling sluggish. */
+  --dur-fast:    260ms;
+  --dur-normal:  480ms;
+  --dur-slow:    760ms;
+  --dur-pulse:   8.5s;
 }

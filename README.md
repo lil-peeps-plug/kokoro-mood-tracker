@@ -1,50 +1,89 @@
-# Kokoro
+# Kokoro 心
 
-A Telegram Mini App built with React + Vite + TypeScript.
+A private Telegram Mini App for daily mood tracking among a small circle (~10–20 people). Log how you feel from 1 to 5, jot a short note, see your trends over time, export it all as a PDF.
+
+> _A quiet mood diary, made with care by Egor. Built by Sinoir Technologies._
 
 ## Stack
 
-- **React 18** — UI
-- **Vite** — dev server / bundler
-- **TypeScript** (strict) — type safety
+- **Frontend** — React 18 + Vite + TypeScript, hosted on **Vercel**
+- **Telegram** — `@twa-dev/sdk`, opens inside a Telegram Mini App
+- **Auth / DB** — **Supabase** Postgres with Row Level Security; `auth-telegram` Edge Function validates `initData` HMAC and mints magic-link sessions
+- **Charts** — Chart.js (line + doughnut)
+- **PDF export** — html2canvas + jsPDF, lazy-loaded
+- **Sound** — Tone.js for the sakura tap chime; YouTube IFrame Player for the ambient track
+- **Fonts** — Noto Sans + Noto Sans JP + Noto Sans Georgian
 
-## Folder structure
+## Develop locally
 
-```
-public/
-  assets/          static assets served as-is
-src/
-  components/      reusable presentational components
-  views/           top-level screens / routes
-  hooks/           custom React hooks
-  lib/             third-party client wrappers (supabase, telegram, etc.)
-  utils/           pure helpers
-  styles/          design tokens + base styles
-  App.tsx          root component
-  main.tsx         entry
-```
-
-## Getting started
-
-```bash
+```sh
 npm install
-cp .env.example .env   # fill in values
-npm run dev
+cp .env.example .env.local           # fill in your Supabase URL + anon key
+npm run dev                          # http://localhost:5173
 ```
 
-Build: `npm run build` · Typecheck: `npm run typecheck`
+Required `.env.local` values:
 
-## Dependencies
+```
+VITE_SUPABASE_URL=https://<your-project-ref>.supabase.co
+VITE_SUPABASE_ANON_KEY=<your-anon-key>
+```
 
-| Package | Purpose |
-| --- | --- |
-| `@supabase/supabase-js` | Backend client — auth, database, storage, realtime. Used to persist user data and sync state across sessions. |
-| `@twa-dev/sdk` | Typed wrapper around the Telegram Web App API. Used for theme params, haptics, main/back buttons, viewport, init data, and other Mini App integrations. |
-| `chart.js` | Canvas-based charting library. Used to render data visualizations inside the app. |
-| `jspdf` | Client-side PDF generation. Used to export reports / summaries as downloadable PDFs. |
-| `html2canvas` | Renders a DOM node to a canvas. Paired with `jspdf` to snapshot styled UI into the exported PDF. |
-| `tone` | Web Audio framework. Used for in-app sounds, ambience, or interaction feedback. |
+The `service_role` key and `BOT_SECRET` are **never** in this repo — they live only as Supabase Edge Function secrets.
 
-## Environment
+## Project layout
 
-See `.env.example`. All client-exposed vars must be prefixed `VITE_`.
+```
+public/assets/         bg.webp (Studio Ghibli–style background)
+src/
+  components/          UI building blocks (Banner, TabBar, AboutModal, SakuraCanvas, …)
+  views/               LogMoodView, StatsView
+  hooks/               useAuth, useMoodEntries
+  lib/                 supabase, telegram, music (YouTube), i18n (EN/RU/KA)
+  utils/               stats, exportPdf, chartTheme
+  styles/              tokens.css (design tokens), base.css
+supabase/
+  config.toml          local CLI config; auth-telegram has verify_jwt = false
+  functions/
+    auth-telegram/     HMAC-verified initData → magic-link OTP
+  migrations/          001_create_mood_entries.sql, 002_enable_rls.sql
+```
+
+## Useful scripts
+
+```sh
+npm run dev          # Vite dev server
+npm run build        # type-check + production build → dist/
+npm run preview      # serve the build locally
+npm run typecheck    # tsc without emit
+```
+
+## Deploying
+
+### Frontend → Vercel
+
+1. Push this repo to GitHub
+2. Sign in to <https://vercel.com> with GitHub
+3. **Add New → Project → Import** the kokoro repo
+4. Framework preset: **Vite** (auto-detected)
+5. Under **Environment Variables**, add:
+   - `VITE_SUPABASE_URL` — your Supabase project URL
+   - `VITE_SUPABASE_ANON_KEY` — your Supabase anon (public) key
+6. Deploy. Note the production URL (e.g. `https://kokoro-xxx.vercel.app`).
+
+### Telegram Mini App → BotFather
+
+1. Open `@BotFather` in Telegram
+2. `/mybots` → choose your bot → **Bot Settings → Menu Button → Configure menu button**
+3. Set the URL to your Vercel URL
+4. Optional: also set a Mini App via **/newapp** to get a `t.me/<bot>/<app>` deep link
+
+### Supabase (already done by you)
+
+- Migrations under `supabase/migrations/` were run via the SQL Editor on first setup
+- `auth-telegram` Edge Function is deployed; `BOT_SECRET` is set as a Supabase secret
+- RLS protects `mood_entries`; only the row owner can read/write their entries
+
+## License
+
+Private. Not for redistribution.

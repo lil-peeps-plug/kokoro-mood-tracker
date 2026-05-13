@@ -1,4 +1,12 @@
-@import "./tokens.css";
+/*
+  ==========================================================================
+  Kokoro — base + shell styles
+  --------------------------------------------------------------------------
+  Resets, body, phone frame (desktop), app shell, banner, viewstack,
+  cards, mood UI, primary button, tab bar, dev login, lantern overlay.
+  Every value references tokens.css; never hard-code colors or spacing.
+  ==========================================================================
+*/
 
 *,
 *::before,
@@ -11,133 +19,2109 @@ body,
 #root {
   margin: 0;
   padding: 0;
-  height: 100%;
-  min-height: 100dvh;
+}
+
+/* Language switch transition.
+   View Transitions API gives the document a crossfade by default. We
+   override with a longer slide + fade so the brief intermediate moment
+   is masked by motion — the eye reads "things moved", not "things
+   went transparent". Longer feels more graceful. */
+::view-transition-old(root) {
+  animation: lang-out 480ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+::view-transition-new(root) {
+  animation: lang-in 560ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes lang-out {
+  from { opacity: 1; transform: translateY(0); }
+  to   { opacity: 0; transform: translateY(-6px); }
+}
+
+@keyframes lang-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 html {
-  color-scheme: dark;
-  -webkit-text-size-adjust: 100%;
-  -webkit-tap-highlight-color: transparent;
+  height: 100%;
+  background: var(--color-stage);
+}
+
+/* Global gentle transitions on every interactive element. Each rule
+   below targets a transition property explicitly so existing per-
+   element transitions (which override these) still win. This pass
+   catches anything we forgot to wire up by hand. */
+button,
+input,
+textarea,
+select,
+a {
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    background-color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-normal) var(--ease-out),
+    opacity var(--dur-normal) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out);
 }
 
 body {
-  background-color: var(--color-background);
-  background-image:
-    radial-gradient(
-      ellipse at 20% 0%,
-      oklch(0.55 0.18 320 / 0.18) 0%,
-      transparent 55%
-    ),
-    radial-gradient(
-      ellipse at 90% 100%,
-      oklch(0.85 0.12 280 / 0.1) 0%,
-      transparent 60%
-    );
-  background-attachment: fixed;
-  color: var(--color-text-primary);
-  font-family: var(--font-sans);
-  font-size: var(--font-size-base);
-  font-weight: var(--font-weight-regular);
-  line-height: var(--line-height-normal);
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  color: var(--color-text);
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
-  overscroll-behavior-y: none;
+  /* GUI-consistency across scripts:
+     - Never let the browser synthesize bold/italic for missing weights —
+       it makes Latin / Cyrillic / Georgian render at different visual
+       weights in the same UI.
+     - Kerning on globally so spacing is predictable. */
+  font-synthesis: none;
+  font-feature-settings: 'kern' 1;
+  overflow: hidden;
 }
 
-h1, h2, h3, h4, h5, h6 {
-  margin: 0;
-  font-weight: var(--font-weight-medium);
-  line-height: var(--line-height-tight);
-  letter-spacing: var(--letter-spacing-tight);
-  color: var(--color-text-primary);
+#root {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--color-bg-base);
+  isolation: isolate; /* keeps mix-blend-mode contained to this stack */
 }
 
-h1 { font-size: var(--font-size-3xl); }
-h2 { font-size: var(--font-size-2xl); }
-h3 { font-size: var(--font-size-xl); }
+/* --- Phone frame on desktop (≥ 600px wide)
+   On real phones / inside Telegram, this never triggers; app fills viewport. */
+@media (min-width: 600px) {
+  body {
+    padding: 1.5rem;
+  }
+  #root {
+    /* Clamp both dimensions to the available viewport so the phone
+       frame never overflows on a small laptop window. */
+    width: min(var(--phone-w), calc(100vw - 3rem));
+    max-width: var(--phone-w);
+    height: min(var(--phone-max-h), calc(100dvh - 3rem));
+    border-radius: var(--radius-xl);
+    box-shadow:
+      0 60px 140px oklch(0 0 0 / 0.6),
+      0 20px 40px oklch(0 0 0 / 0.4),
+      0 0 0 1px var(--phone-bezel),
+      inset 0 0 0 1px oklch(1 0 0 / 0.05);
+  }
+}
 
-p {
+/* --- App shell --------------------------------------------------------- */
+
+.app {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  animation: app-fade-in var(--dur-slow) var(--ease-out);
+}
+
+@keyframes app-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.app__bg {
+  position: absolute;
+  inset: 0;
+  background-image: url('/assets/bg.webp');
+  background-size: cover;
+  background-position: center;
+  z-index: 0;
+  animation: bg-drift 32s var(--ease-glide) infinite alternate;
+  will-change: transform;
+}
+
+@keyframes bg-drift {
+  from { transform: scale(1.05) translate(0, 0); }
+  to   { transform: scale(1.05) translate(0, -1.5%); }
+}
+
+.app__scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    var(--scrim-top) 0%,
+    var(--scrim-top) 38%,
+    var(--scrim-bottom) 100%
+  );
+  z-index: 1;
+  pointer-events: none;
+}
+
+.app__content {
+  position: relative;
+  z-index: 3;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.app__center {
+  flex: 1 1 auto;
+  display: grid;
+  place-items: center;
+  padding: var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-left);
+  animation: fade-up var(--dur-slow) var(--ease-out);
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* --- Status text utilities (loading / error) --------------------------- */
+
+.app-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  text-align: center;
+}
+
+.app-title {
   margin: 0;
+  font-size: var(--fs-2xl);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+.app-status {
+  margin: 0;
+  font-size: var(--fs-sm);
   color: var(--color-text-muted);
 }
 
-a {
+.app-status code {
+  font-family: var(--font-mono);
+  background: var(--color-surface);
+  padding: 0.1em 0.4em;
+  border-radius: var(--radius-sm);
+}
+
+.app-status--error {
+  color: var(--color-error);
+  max-width: 30ch;
+}
+
+/* --- Topbar (solid header bar holding banner + ticker) ------------- */
+/* Gives the whole top zone a unified glass surface so the banner and the
+   running text read as one solid header instead of floating over the bg. */
+
+.topbar {
+  position: relative;
+  flex: 0 0 auto;
+  z-index: 4;
+  background: var(--color-surface);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  border-bottom: 1px solid oklch(1 0 0 / 0.06);
+  box-shadow:
+    inset 0 1px 0 var(--color-edge-hi),
+    0 8px 28px oklch(0 0 0 / 0.18);
+}
+
+/* --- Banner (top header) --------------------------------------------- */
+/* The banner itself stays interactive (lang picker lives in its top-right).
+   The title text inside .banner__inner has the gradient mask + is non-interactive. */
+
+.banner {
+  position: relative;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding:
+    calc(var(--safe-top) + var(--space-4))
+    var(--space-5)
+    var(--space-4);
+  z-index: 4;
+  /* Hairline divider between banner and ticker so the two zones read
+     as separate even though they share the same topbar surface. */
+  border-bottom: 1px solid oklch(1 0 0 / 0.05);
+}
+
+.banner__inner {
+  display: flex;
+  align-items: baseline;
+  gap: 0.55em;
+  user-select: none;
+  pointer-events: none;
+  -webkit-mask-image: linear-gradient(
+    180deg,
+    black 0%,
+    black 55%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    180deg,
+    black 0%,
+    black 55%,
+    transparent 100%
+  );
+  padding-bottom: 8px;
+}
+
+.banner__title {
+  font-family: var(--font-display);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  letter-spacing: 0.42em;
+  color: var(--color-text);
+  text-transform: uppercase;
+  opacity: 0.92;
+}
+
+.banner__kanji {
+  font-family: var(--font-display);
+  font-size: var(--fs-md);
+  font-weight: 400;
   color: var(--color-accent);
-  text-decoration: none;
-  transition: color var(--transition-fast);
+  opacity: 0.75;
+  line-height: 1;
 }
 
-a:hover {
-  color: var(--color-primary);
+/* --- Exit button (top-left of banner, leftmost) --------------------- */
+
+.exit-btn {
+  position: absolute;
+  top: calc(var(--safe-top) + var(--space-2));
+  left: var(--space-4);
+  z-index: 5;
+  width: var(--topbar-icon-size);
+  height: var(--topbar-icon-size);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  color: var(--color-text-faint);
+  cursor: pointer;
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  -webkit-tap-highlight-color: transparent;
+  box-shadow:
+    inset 0 1px 0 var(--color-edge-hi),
+    0 4px 14px oklch(0 0 0 / 0.25);
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out);
 }
 
-button {
-  font-family: inherit;
-  font-size: inherit;
-  color: inherit;
-  background: none;
-  border: none;
+.exit-btn:hover {
+  color: var(--color-error);
+  border-color: var(--color-error);
+}
+
+.exit-btn:focus-visible {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow:
+    inset 0 1px 0 var(--color-edge-hi),
+    0 0 0 3px oklch(0.88 0.05 75 / 0.32);
+}
+
+.exit-btn:active {
+  transform: scale(0.94);
+}
+
+/* --- Music control (top-left of banner, right of exit) -------------- */
+
+.music {
+  position: absolute;
+  top: calc(var(--safe-top) + var(--space-2));
+  /* Sit immediately to the right of the Exit button. */
+  left: calc(var(--space-4) + var(--topbar-icon-size) + var(--space-2));
+  z-index: 5;
+}
+
+.music-btn {
+  width: var(--topbar-icon-size);
+  height: var(--topbar-icon-size);
   padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  color: var(--color-text-faint);
+  cursor: pointer;
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  -webkit-tap-highlight-color: transparent;
+  box-shadow:
+    inset 0 1px 0 var(--color-edge-hi),
+    0 4px 14px oklch(0 0 0 / 0.25);
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out);
+}
+
+/* SVG default display: inline leaves a baseline gap that nudges the
+   icon down inside the button. Block + a tiny negative Y compensates
+   for the music note's optical centre being below its geometric
+   centre (most mass is in the note heads, stem extends up). */
+.music-btn svg,
+.exit-btn svg {
+  display: block;
+  transform: translateY(-1px);
+}
+
+.music-btn:hover:not(:disabled) {
+  color: var(--color-text);
+  border-color: var(--color-accent);
+}
+
+.music-btn:focus-visible {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow:
+    inset 0 1px 0 var(--color-edge-hi),
+    0 0 0 3px oklch(0.88 0.05 75 / 0.32);
+}
+
+.music-btn:active:not(:disabled) {
+  transform: scale(0.94);
+}
+
+.music-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.music-btn.is-playing {
+  color: var(--color-accent);
+  border-color: oklch(0.88 0.05 75 / 0.45);
+}
+
+/* Popover with play/pause + volume slider */
+.music-menu {
+  position: absolute;
+  /* Open clearly BELOW the banner's bottom edge, not inside its padding. */
+  top: calc(100% + var(--space-5));
+  left: 0;
+  min-width: 220px;
+  padding: var(--space-2);
+  /* Fully opaque card surface — the popover reads as a solid panel,
+     not a translucent overlay. Matches the main card look. */
+  background: var(--color-card);
+  border: 1px solid var(--color-card-edge);
+  border-radius: var(--radius-md);
+  box-shadow:
+    inset 0 1px 0 var(--color-edge-hi),
+    0 22px 60px oklch(0 0 0 / 0.65),
+    0 6px 20px oklch(0 0 0 / 0.4);
+  /* Soft fade + gentle slide. Matches the language popover. */
+  opacity: 0;
+  transform: translateY(-6px);
+  pointer-events: none;
+  transition:
+    opacity 360ms var(--ease-out),
+    transform 360ms var(--ease-out);
+}
+
+.music-menu.is-open {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.music-menu__toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  font-family: var(--font-display);
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  text-align: left;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out);
 }
 
-button:disabled {
-  cursor: not-allowed;
-  opacity: 0.5;
+.music-menu__toggle:hover {
+  background: oklch(1 0 0 / 0.05);
 }
 
-input,
-textarea,
-select {
-  font-family: inherit;
-  font-size: inherit;
-  color: inherit;
+.music-menu__toggle-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  font-size: var(--fs-xs);
+  color: var(--color-accent);
+  letter-spacing: 0.04em;
 }
 
-img,
-svg,
-video {
-  display: block;
-  max-width: 100%;
+/* Two-row layout: label + percentage on the top row, slider beneath.
+   Gives the value its own column with predictable width — no
+   squishing as the digits change from 1% → 100%. */
+.music-menu__slider-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-rows: auto auto;
+  column-gap: var(--space-3);
+  row-gap: var(--space-2);
+  padding: var(--space-3);
+  border-top: 1px solid oklch(1 0 0 / 0.05);
+  margin-top: var(--space-1);
+  align-items: center;
 }
 
-::selection {
-  background-color: oklch(0.55 0.18 320 / 0.45);
-  color: var(--color-text-primary);
+.music-menu__slider-label {
+  grid-column: 1;
+  grid-row: 1;
+  font-size: var(--fs-xs);
+  color: var(--color-text-muted);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+.music-menu__slider-value {
+  grid-column: 2;
+  grid-row: 1;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--color-accent);
+  font-feature-settings: 'tnum';
+  font-variant-numeric: tabular-nums;
+  min-width: 3em;
+  text-align: right;
+  letter-spacing: 0.02em;
 }
 
-::-webkit-scrollbar-track {
+/* Slider sits below the label/value row, spanning both columns. */
+.music-menu__slider {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  width: 100%;
+  height: 18px;
+  margin: 0;
   background: transparent;
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
 }
 
-::-webkit-scrollbar-thumb {
-  background: var(--color-border-subtle);
+.music-menu__slider::-webkit-slider-runnable-track {
+  height: 3px;
+  background: oklch(1 0 0 / 0.10);
+  border-radius: 999px;
+}
+.music-menu__slider::-moz-range-track {
+  height: 3px;
+  background: oklch(1 0 0 / 0.10);
+  border-radius: 999px;
+}
+
+.music-menu__slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  margin-top: -5.5px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  border: none;
+  box-shadow: 0 2px 6px oklch(0 0 0 / 0.35);
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+.music-menu__slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  border: none;
+  box-shadow: 0 2px 6px oklch(0 0 0 / 0.35);
+}
+
+.music-menu__slider:hover::-webkit-slider-thumb {
+  transform: scale(1.12);
+}
+.music-menu__slider:focus-visible {
+  outline: none;
+}
+.music-menu__slider:focus-visible::-webkit-slider-thumb {
+  box-shadow:
+    0 2px 6px oklch(0 0 0 / 0.35),
+    0 0 0 3px oklch(0.88 0.05 75 / 0.32);
+}
+
+/* Legal note at the bottom of the music popover. */
+.music-menu__legal {
+  margin: 0;
+  padding: var(--space-3) var(--space-3) var(--space-2);
+  border-top: 1px solid oklch(1 0 0 / 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: 10px;
+  line-height: 1.45;
+  color: var(--color-text-faint);
+  max-width: 220px;
+}
+
+.music-menu__legal-link {
+  font-size: 11px;
+  color: var(--color-accent);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.music-menu__legal-link:hover,
+.music-menu__legal-link:focus-visible {
+  text-decoration: underline;
+}
+
+.music-menu__legal-body {
+  display: block;
+}
+
+/* --- Sound visualizer (above the tab bar) ---------------------------- */
+
+.visualizer {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(var(--tab-bar-height) + var(--safe-bottom));
+  height: var(--vis-height);
+  z-index: 4;
+  pointer-events: none;
+  /* Slow, gentle fade-in (and out) when music starts/stops. */
+  opacity: 0;
+  transform: translateY(6px);
+  transition:
+    opacity 1800ms var(--ease-out),
+    transform 1800ms var(--ease-out);
+  /* Bars glow lightly over the bg rather than darken it. */
+  mix-blend-mode: screen;
+}
+
+.visualizer.is-active {
+  opacity: 0.55;
+  transform: translateY(0);
+}
+
+.visualizer__canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* --- Language picker -------------------------------------------------- */
+
+.lang {
+  position: absolute;
+  top: calc(var(--safe-top) + var(--space-2));
+  right: var(--space-4);
+  z-index: 5;
+}
+
+.lang__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  height: var(--topbar-icon-size);
+  padding: 0 var(--space-2);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-full);
+  color: var(--color-text-muted);
+  font-family: var(--font-display);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  -webkit-tap-highlight-color: transparent;
+  box-shadow:
+    inset 0 1px 0 var(--color-edge-hi),
+    0 4px 14px oklch(0 0 0 / 0.25);
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out);
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: oklch(0.4 0.05 275 / 0.7);
+.lang__btn:hover {
+  color: var(--color-text);
+  border-color: var(--color-accent);
 }
 
-:focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 2px;
-  border-radius: var(--radius-xs);
+.lang__btn:focus-visible {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow:
+    inset 0 1px 0 var(--color-edge-hi),
+    0 0 0 3px oklch(0.88 0.05 75 / 0.32);
+}
+
+.lang__btn:active {
+  transform: scale(0.94);
+}
+
+.lang__menu {
+  position: absolute;
+  /* Open clearly BELOW the banner's bottom edge, not inside its padding. */
+  top: calc(100% + var(--space-5));
+  right: 0;
+  margin: 0;
+  padding: var(--space-1);
+  list-style: none;
+  min-width: 170px;
+  background: var(--color-surface-elev);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  backdrop-filter: blur(32px) saturate(180%);
+  -webkit-backdrop-filter: blur(32px) saturate(180%);
+  box-shadow:
+    inset 0 1px 0 var(--color-edge-hi),
+    0 18px 50px oklch(0 0 0 / 0.55);
+  /* Soft fade + gentle slide — slower than a typical dropdown for
+     consistency with the app's overall pacing. */
+  opacity: 0;
+  transform: translateY(-6px);
+  pointer-events: none;
+  transition:
+    opacity 360ms var(--ease-out),
+    transform 360ms var(--ease-out);
+}
+
+.lang__menu.is-open {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.lang__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  font-family: var(--font-display);
+  font-size: var(--fs-sm);
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out);
+}
+
+.lang__item:hover {
+  background: oklch(1 0 0 / 0.05);
+  color: var(--color-text);
+}
+
+.lang__item:focus-visible {
+  outline: none;
+  background: oklch(1 0 0 / 0.05);
+  color: var(--color-text);
+  box-shadow: inset 0 0 0 2px var(--color-accent);
+}
+
+.lang__item.is-active {
+  color: var(--color-accent);
+}
+
+.lang__item-short {
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: var(--color-text-faint);
+  min-width: 22px;
+}
+
+.lang__item.is-active .lang__item-short {
+  color: var(--color-accent);
+}
+
+.lang__item-label {
+  flex: 1 1 auto;
+}
+
+
+/* --- In-app dedication ticker (slim strip between banner and views) -- */
+/* Horizontal margins match the banner's content padding (--space-5 on
+   each side) so the ticker's edges line up with the wordmark above it. */
+
+.ticker {
+  position: relative;
+  flex: 0 0 auto;
+  z-index: 4;
+  margin:
+    var(--space-3)
+    calc(var(--safe-right) + var(--space-5))
+    var(--space-3)
+    calc(var(--safe-left) + var(--space-5));
+  padding: var(--space-2) 0;
+  overflow: hidden;
+  white-space: nowrap;
+  font-size: var(--fs-xs);
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  color: var(--color-text-faint);
+  /* Fade out smoothly when a popover opens above it (see :has() below). */
+  transition: opacity var(--dur-normal) var(--ease-out);
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    black 10%,
+    black 90%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    black 10%,
+    black 90%,
+    transparent 100%
+  );
+}
+
+.ticker__track {
+  display: inline-flex;
+  animation: ticker-scroll 28s linear infinite;
+}
+
+.ticker__line {
+  padding-right: var(--space-5);
+  color: var(--color-text-faint);
+}
+
+.ticker__line em {
+  font-style: italic;
+  color: var(--color-accent);
+  opacity: 0.85;
+}
+
+@keyframes ticker-scroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+/* When either popover is open, fade the ticker out of the way so the
+   running text doesn't peek behind the menu. */
+.topbar:has(.lang__menu.is-open) .ticker,
+.topbar:has(.music-menu.is-open) .ticker {
+  opacity: 0;
+  pointer-events: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    transition-duration: 0.01ms !important;
+  .ticker__track {
+    animation: none;
   }
+}
+
+/* --- View stack (holds both tab views, crossfades between them) ------ */
+
+.viewstack {
+  position: relative;
+  flex: 1 1 auto;
+  overflow: hidden;
+}
+
+.view {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  /* Extra top padding gives the card breathing room below the banner +
+     ticker. Bottom padding reserves room for BOTH the tab bar AND the
+     visualizer strip above it, so card content never slides under either. */
+  padding:
+    var(--space-4)
+    calc(var(--safe-right) + var(--space-5))
+    calc(var(--tab-bar-height) + var(--safe-bottom) + var(--vis-height) + var(--space-4))
+    calc(var(--safe-left) + var(--space-5));
+  opacity: 0;
+  transform: translateY(12px) scale(0.985);
+  pointer-events: none;
+  transition:
+    opacity var(--dur-slow) var(--ease-out),
+    transform var(--dur-slow) var(--ease-out);
+  will-change: opacity, transform;
+}
+
+.view.is-active {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+/* --- Card (the big opaque content box, covers the temple) ----------- */
+
+.card {
+  position: relative;
+  /* Auto-height. The card sizes to its content; flex-shrink stays 0
+     so it never collapses below content. */
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding: var(--space-6) var(--space-5) var(--space-5);
+  background: var(--color-card);
+  border: 1px solid var(--color-card-edge);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow:
+    inset 0 1px 0 var(--color-edge-hi),
+    inset 0 -1px 0 var(--color-edge-lo),
+    0 16px 50px oklch(0 0 0 / 0.55),
+    0 4px 12px oklch(0 0 0 / 0.35);
+}
+
+/* Staggered fade-up for direct children of the card on first mount.
+   `backwards` so each child holds the "from" state until its delay
+   expires, giving the appearance of pieces arriving one after another. */
+.card > * {
+  animation: card-child-in 420ms var(--ease-out) backwards;
+}
+.card > *:nth-child(1) { animation-delay: 0ms; }
+.card > *:nth-child(2) { animation-delay: 60ms; }
+.card > *:nth-child(3) { animation-delay: 120ms; }
+.card > *:nth-child(4) { animation-delay: 180ms; }
+.card > *:nth-child(5) { animation-delay: 240ms; }
+.card > *:nth-child(6) { animation-delay: 300ms; }
+.card > *:nth-child(7) { animation-delay: 360ms; }
+.card > *:nth-child(8) { animation-delay: 420ms; }
+
+@keyframes card-child-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card > * { animation: none; }
+}
+
+/* Subtle gradient sheen for depth — pure decoration */
+.card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    oklch(1 0 0 / 0.028) 0%,
+    transparent 30%,
+    oklch(0 0 0 / 0.20) 100%
+  );
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+.card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.card__head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.card__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--fs-xl);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+
+.card__sub {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--fs-sm);
+  line-height: 1.55;
+}
+
+.card__footer {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.card__error {
+  margin: 0;
+  color: var(--color-error);
+  font-size: var(--fs-xs);
+  text-align: center;
+  line-height: 1.5;
+}
+
+.card__stub {
+  padding: var(--space-5);
+  background: var(--color-input);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text-muted);
+  font-size: var(--fs-sm);
+  line-height: 1.55;
+}
+
+/* --- Sakura canvas (decorative petals, between lantern and content) - */
+
+.sakura {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  /* Canvas itself never catches clicks. The component listens at the
+     document level and hit-tests petals against pointer coordinates,
+     so non-petal taps still reach interactive UI underneath. */
+  pointer-events: none;
+}
+
+.sakura__canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* --- Lantern glow (radial bloom, not a line) -------------------------- */
+
+.lantern-glow {
+  position: absolute;
+  top: var(--lantern-top);
+  left: var(--lantern-left);
+  width: var(--lantern-size);
+  height: var(--lantern-size);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 2;
+  mix-blend-mode: screen;
+}
+
+.lantern-glow__halo {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at center,
+    oklch(0.94 0.18 72 / 0.55) 0%,
+    oklch(0.82 0.20 62 / 0.40) 14%,
+    oklch(0.68 0.18 52 / 0.22) 32%,
+    oklch(0.52 0.15 42 / 0.10) 52%,
+    transparent 78%
+  );
+  filter: blur(28px);
+  animation: lantern-pulse var(--dur-pulse) var(--ease-glide) infinite;
+  will-change: opacity, transform;
+}
+
+.lantern-glow__core {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: var(--lantern-core-size);
+  height: var(--lantern-core-size);
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at center,
+    oklch(0.98 0.18 80 / 0.95) 0%,
+    oklch(0.92 0.20 75 / 0.65) 22%,
+    oklch(0.82 0.20 65 / 0.35) 50%,
+    transparent 78%
+  );
+  filter: blur(10px);
+  animation: lantern-core 4.6s var(--ease-glide) infinite;
+  will-change: opacity, transform;
+}
+
+@keyframes lantern-pulse {
+  0%   { opacity: 0.62; transform: scale(1);    filter: blur(28px); }
+  50%  { opacity: 0.95; transform: scale(1.06); filter: blur(34px); }
+  100% { opacity: 0.62; transform: scale(1);    filter: blur(28px); }
+}
+
+@keyframes lantern-core {
+  0%, 100% { opacity: 0.78; transform: translate(-50%, -50%) scale(1); }
+  30%      { opacity: 1.0;  transform: translate(-50%, -50%) scale(1.1); }
+  55%      { opacity: 0.85; transform: translate(-50%, -50%) scale(0.94); }
+  78%      { opacity: 0.95; transform: translate(-50%, -50%) scale(1.04); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app,
+  .app__bg,
+  .app__center {
+    animation: none;
+  }
+  .lantern-glow__halo,
+  .lantern-glow__core {
+    animation: none;
+    opacity: 0.8;
+  }
+}
+
+/* --- About modal (first-run welcome) -------------------------------- */
+
+.about-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: var(--space-5);
+  background: oklch(0 0 0 / 0.55);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  /* Entry animation fires on mount. The transition handles the exit
+     when .is-exiting is added (see below). */
+  animation: about-backdrop-in 520ms var(--ease-out);
+  transition: opacity 480ms var(--ease-out);
+  opacity: 1;
+}
+
+.about-backdrop.is-exiting {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.about-card {
+  width: min(22rem, 100%);
+  max-height: calc(100dvh - var(--space-8));
+  overflow-y: auto;
+  padding: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  background: var(--color-card);
+  border: 1px solid var(--color-card-edge);
+  border-radius: var(--radius-lg);
+  box-shadow:
+    inset 0 1px 0 var(--color-edge-hi),
+    0 30px 80px oklch(0 0 0 / 0.6);
+  animation: about-card-in 640ms var(--ease-out);
+  transition:
+    opacity 480ms var(--ease-out),
+    transform 480ms var(--ease-out);
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.about-card.is-exiting {
+  opacity: 0;
+  transform: translateY(12px) scale(0.985);
+}
+
+.about-card__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--fs-xl);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--color-text);
+}
+
+/* About modal head wrapper — keyed by locale to trigger a soft entry
+   animation on every language switch. Starts from opacity 0.5 (still
+   readable) so there's no flash of transparency. Longer duration for
+   the languid switching feel. */
+.about-card__head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  animation: about-head-in 520ms var(--ease-out);
+}
+
+@keyframes about-head-in {
+  from { opacity: 0.5; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.about-card__body {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--fs-sm);
+  line-height: 1.55;
+  /* Honor \n\n in the i18n string as paragraph breaks. */
+  white-space: pre-line;
+}
+
+/* Inline language picker inside the About modal — segmented pill with a
+   sliding indicator. Three equal-width buttons; pill position driven by
+   `data-active` on the parent. */
+.about-langs {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  padding: 4px;
+  background: var(--color-input);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+}
+
+.about-langs__pill {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  left: 4px;
+  width: calc((100% - 8px) / 3);
+  background: var(--color-surface-hi);
+  border-radius: var(--radius-full);
+  box-shadow:
+    inset 0 1px 0 var(--color-edge-hi),
+    0 2px 8px oklch(0 0 0 / 0.3);
+  transform: translateX(0);
+  transition: transform var(--dur-slow) var(--ease-out);
+  pointer-events: none;
+}
+
+.about-langs[data-active='ru'] .about-langs__pill { transform: translateX(100%); }
+.about-langs[data-active='ka'] .about-langs__pill { transform: translateX(200%); }
+
+.about-langs__btn {
+  position: relative;
+  z-index: 1;
+  padding: var(--space-2) var(--space-3);
+  background: transparent;
+  border: none;
+  color: var(--color-text-muted);
+  font: inherit;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: color var(--dur-fast) var(--ease-out);
+}
+
+.about-langs__btn:hover { color: var(--color-text); }
+.about-langs__btn.is-active { color: var(--color-accent); }
+
+.about-langs__btn:focus-visible {
+  outline: none;
+  border-radius: var(--radius-full);
+  box-shadow: inset 0 0 0 2px var(--color-accent);
+}
+
+.about-card__check {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.about-card__check input[type='checkbox'] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  border: 1.5px solid var(--color-border);
+  border-radius: 5px;
+  background: var(--color-input);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    border-color var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out);
+}
+
+.about-card__check input[type='checkbox']:hover {
+  border-color: var(--color-accent);
+}
+
+.about-card__check input[type='checkbox']:focus-visible {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px oklch(0.88 0.05 75 / 0.32);
+}
+
+.about-card__check input[type='checkbox']:checked {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+/* Larger, thicker check on the cream-coloured fill. Dark stroke for
+   maximum contrast against the accent background. */
+.about-card__check input[type='checkbox']:checked::after {
+  content: '';
+  width: 11px;
+  height: 6px;
+  border-left: 2.5px solid oklch(0.14 0.02 320);
+  border-bottom: 2.5px solid oklch(0.14 0.02 320);
+  transform: rotate(-45deg) translate(1px, -1px);
+}
+
+.about-card__ok {
+  align-self: stretch;
+}
+
+@keyframes about-backdrop-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes about-card-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.985); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* --- Loading splash --------------------------------------------------- */
+
+.loading {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-5);
+  /* Dark, monotone purple. Near-solid with only the faintest centre lift
+     so it doesn't read as a flat dead colour. */
+  background:
+    radial-gradient(
+      ellipse at 50% 50%,
+      oklch(0.15 0.035 305) 0%,
+      oklch(0.11 0.028 305) 100%
+    );
+  opacity: 1;
+  transition: opacity 1500ms var(--ease-out);
+}
+
+.loading.is-exiting {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Simple flex column stack — kanji on top, wordmark below, quote below.
+   Centred as a group by the parent flex (.loading). The whole stack
+   then drifts upward as the splash exits. */
+.loading__stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+  text-align: center;
+  max-width: 100%;
+  z-index: 1;
+  animation: loading-stack-drift 2200ms var(--ease-glide) 3000ms forwards;
+  will-change: transform;
+}
+
+@keyframes loading-stack-drift {
+  from { transform: translateY(0); }
+  to   { transform: translateY(-20vh); }
+}
+
+/* The brand mirrors the in-app banner layout: "KOKORO" wordmark with the
+   kanji at the end. Same gap, same baseline, just larger. */
+.loading__brand {
+  display: flex;
+  align-items: baseline;
+  gap: 0.55em;
+}
+
+/* Wordmark sits below the kanji as a subtle subtitle. */
+.loading__title {
+  font-family: var(--font-display);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  font-synthesis: none;
+  letter-spacing: 0.5em;
+  color: var(--color-text);
+  text-transform: uppercase;
+  /* Letter-spacing pushes the last glyph past its box; pad to recentre. */
+  padding-left: 0.5em;
+  opacity: 0;
+  animation: loading-title-in 1300ms var(--ease-out) 1400ms forwards;
+}
+
+/* The kanji is THE focal element of the splash. Modern sans
+   (Noto Sans JP) so it matches the rest of the UI. Soft warm
+   glow breathes after the fade-in. */
+.loading__kanji {
+  font-family: var(--font-display);
+  font-size: 4.5rem;
+  font-weight: 500;
+  font-synthesis: none;
+  line-height: 1;
+  color: var(--color-accent);
+  text-shadow:
+    0 0 26px oklch(0.90 0.18 75 / 0.55),
+    0 0 70px oklch(0.85 0.16 65 / 0.30);
+  opacity: 0;
+  animation:
+    kanji-enter 1400ms var(--ease-out) 600ms forwards,
+    kanji-breathe 4.6s var(--ease-glide) 2200ms infinite;
+}
+
+/* Quote below the wordmark. Sans-serif so the three scripts (Latin /
+   Cyrillic / Georgian) render at identical visual weight. Reserved
+   min-height keeps the layout stable whether the line wraps or not. */
+.loading__quote {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--fs-md);
+  font-weight: 400;
+  line-height: 1.4;
+  font-synthesis: none;
+  color: var(--color-accent);
+  text-align: center;
+  letter-spacing: 0.02em;
+  max-width: min(28ch, 100%);
+  min-height: calc(var(--fs-md) * 1.4);
+  opacity: 0;
+  animation: loading-quote-in 1300ms var(--ease-out) 2400ms forwards;
+}
+
+@keyframes kanji-enter {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes kanji-breathe {
+  0%, 100% { opacity: 0.85; transform: scale(1); }
+  50%      { opacity: 1;    transform: scale(1.05); }
+}
+
+@keyframes loading-title-in {
+  from { opacity: 0; transform: translateY(6px); letter-spacing: 0.3em; }
+  to   { opacity: 1; transform: translateY(0);   letter-spacing: 0.5em; }
+}
+
+@keyframes loading-quote-in {
+  /* Lands at full opacity so the three scripts (Latin / Cyrillic /
+     Georgian) all render at identical intensity. */
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Personal dedication ticker at the bottom of the loading splash. */
+.loading__dedication {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(var(--space-6) + var(--safe-bottom));
+  overflow: hidden;
+  white-space: nowrap;
+  font-size: var(--fs-xs);
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  color: var(--color-text-faint);
+  opacity: 0;
+  animation: loading-dedication-in 1100ms var(--ease-out) 2800ms forwards;
+  /* Edge mask so the ticker fades in/out at the sides instead of clipping hard. */
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    black 10%,
+    black 90%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    black 10%,
+    black 90%,
+    transparent 100%
+  );
+}
+
+.loading__dedication-track {
+  display: inline-flex;
+  /* Duplicated content; translate by half the total to loop seamlessly. */
+  animation: loading-dedication-scroll 26s linear infinite;
+}
+
+.loading__dedication-line {
+  padding-right: var(--space-5);
+  color: var(--color-text-faint);
+}
+
+.loading__dedication-line em {
+  font-style: italic;
+  color: var(--color-accent);
+  opacity: 0.85;
+}
+
+@keyframes loading-dedication-in {
+  from { opacity: 0; }
+  to   { opacity: 0.75; }
+}
+
+@keyframes loading-dedication-scroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loading__stack {
+    animation: none;
+  }
+  .loading__kanji {
+    animation: none;
+    opacity: 0.9;
+  }
+  .loading__title,
+  .loading__quote {
+    animation: none;
+    opacity: 1;
+  }
+}
+
+/* --- PDF capture mode -----------------------------------------------
+   html2canvas 1.4.x cannot parse oklch() colors. While the card is being
+   captured we apply this class and replace every design-token with a
+   hex/rgba equivalent the screenshot library can parse. We also hide
+   interactive controls that don't belong in a report.                   */
+
+.is-printing {
+  --color-bg-base:        #1a1326;
+  --color-card:           #1f1828;
+  --color-card-edge:      rgba(120, 95, 145, 0.40);
+  --color-surface:        rgba(35, 28, 48, 0.92);
+  --color-surface-elev:   rgba(45, 36, 58, 0.96);
+  --color-surface-hi:     rgba(60, 48, 75, 0.98);
+  --color-border:         rgba(120, 95, 145, 0.40);
+  --color-edge-hi:        rgba(255, 255, 255, 0.06);
+  --color-edge-lo:        rgba(0, 0, 0, 0.18);
+  --color-text:           #f3edde;
+  --color-text-muted:     #c0b7a8;
+  --color-text-faint:     #968b7e;
+  --color-primary:        #d49bb0;
+  --color-primary-hover:  #de9eb5;
+  --color-primary-on:     #1a1326;
+  --color-accent:         #e6c39f;
+  --color-error:          #d97a6a;
+  --color-success:        #95cea3;
+  --color-warm-glow:      #f0c98a;
+  --color-input:          #16111e;
+}
+
+.is-printing .range-filter,
+.is-printing .card__footer {
+  display: none;
+}
+
+/* Sheen overlay uses direct oklch, kill it during print. */
+.is-printing.card::before,
+.is-printing .card::before {
+  display: none;
+}
+
+/* --- Stats UI -------------------------------------------------------- */
+
+.range-filter {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0;
+  padding: 4px;
+  background: var(--color-input);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+}
+
+.range-filter__pill {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  left: 4px;
+  width: calc((100% - 8px) / 3);
+  background: var(--color-surface-hi);
+  border-radius: var(--radius-full);
+  box-shadow:
+    inset 0 1px 0 var(--color-edge-hi),
+    0 2px 8px oklch(0 0 0 / 0.3);
+  /* Smooth slide, no overshoot. */
+  transition: transform var(--dur-slow) var(--ease-out);
+  pointer-events: none;
+}
+
+.range-filter[data-active='30d'] .range-filter__pill {
+  transform: translateX(100%);
+}
+.range-filter[data-active='all'] .range-filter__pill {
+  transform: translateX(200%);
+}
+
+.range-filter__btn {
+  position: relative;
+  z-index: 1;
+  padding: var(--space-2) var(--space-3);
+  background: transparent;
+  border: none;
+  color: var(--color-text-muted);
+  font: inherit;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: color var(--dur-fast) var(--ease-out);
+}
+
+.range-filter__btn:hover { color: var(--color-text); }
+.range-filter__btn.is-active { color: var(--color-accent); }
+
+.range-filter__btn:focus-visible {
+  outline: none;
+  border-radius: var(--radius-full);
+  box-shadow: inset 0 0 0 2px var(--color-accent);
+}
+
+/* --- Summary tiles --- */
+
+.stats-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-3);
+}
+
+.stat-tile {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  background: var(--color-input);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.stat-tile__label {
+  font-size: var(--fs-xs);
+  color: var(--color-text-faint);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.stat-tile__value {
+  font-size: var(--fs-xl);
+  font-weight: 600;
+  color: var(--color-text);
+  letter-spacing: -0.01em;
+  /* Tabular numerics so the value column lines up identically regardless
+     of which locale's accompanying labels are showing. */
+  font-feature-settings: 'tnum';
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-tile__hint {
+  font-size: var(--fs-xs);
+  color: var(--color-text-faint);
+}
+
+/* --- Stats sections (chart / list) --- */
+
+.stats-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.stats-section__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+}
+
+.chart {
+  position: relative;
+  width: 100%;
+  height: 200px;
+  padding: var(--space-2);
+  background: var(--color-input);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.chart--doughnut {
+  height: 240px;
+}
+
+.chart__canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* --- History list --- */
+
+.history {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.history__item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  background: var(--color-input);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.history__badge {
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: oklch(0.14 0.02 320);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.history__body {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.history__date {
+  font-size: var(--fs-xs);
+  color: var(--color-text-faint);
+  letter-spacing: 0.04em;
+}
+
+.history__note {
+  margin: 0;
+  font-size: var(--fs-sm);
+  color: var(--color-text);
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+/* --- Mood UI ---------------------------------------------------------- */
+
+.mood-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: var(--space-3);
+}
+
+.mood-btn {
+  position: relative;
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-input);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-full);
+  color: var(--color-text-muted);
+  font: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  /* No spring on the button itself — keeps the press feel grounded.
+     The spring is reserved for the inner number on active. */
+  transition:
+    background var(--dur-normal) var(--ease-out),
+    border-color var(--dur-normal) var(--ease-out),
+    color var(--dur-normal) var(--ease-out),
+    transform 140ms var(--ease-out),
+    box-shadow var(--dur-normal) var(--ease-out);
+}
+
+.mood-btn__num {
+  font-size: var(--fs-lg);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  /* Soft scale, no overshoot. */
+  transition: transform var(--dur-normal) var(--ease-out);
+}
+
+.mood-btn:hover {
+  border-color: var(--color-accent);
+  color: var(--color-text);
+}
+
+.mood-btn:focus-visible {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px oklch(0.88 0.05 75 / 0.32);
+}
+
+.mood-btn.is-active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-primary-on);
+  /* No colored halo — just clean elevation. Inner top edge catches a
+     hint of light; outer shadow grounds the button against the card. */
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 0.16),
+    0 4px 12px oklch(0 0 0 / 0.30);
+}
+
+.mood-btn.is-active .mood-btn__num {
+  transform: scale(1.10);
+}
+
+.mood-btn:active {
+  transform: scale(0.96);
+}
+
+.mood-grid__label {
+  margin: 0;
+  height: 1.6em;
+  text-align: center;
+  font-size: var(--fs-md);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--color-accent);
+  text-transform: capitalize;
+  transition:
+    opacity var(--dur-normal) var(--ease-out),
+    color var(--dur-normal) var(--ease-out),
+    font-size var(--dur-normal) var(--ease-out);
+}
+
+.mood-grid__label[data-empty='true'] {
+  color: var(--color-text-faint);
+  font-size: var(--fs-sm);
+  text-transform: none;
+  opacity: 0.65;
+}
+
+/* --- Note textarea --------------------------------------------------- */
+
+.mood-note {
+  position: relative;
+  display: block;
+}
+
+.mood-note__input {
+  width: 100%;
+  padding: var(--space-3) var(--space-4) var(--space-5);
+  background: var(--color-input);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  font-family: var(--font-display);
+  font-size: var(--fs-sm);
+  line-height: 1.55;
+  resize: none;
+  transition:
+    border-color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out);
+}
+
+.mood-note__input::placeholder {
+  color: var(--color-text-faint);
+}
+
+.mood-note__input:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px oklch(0.88 0.05 75 / 0.22);
+}
+
+.mood-note__count {
+  position: absolute;
+  right: var(--space-3);
+  bottom: var(--space-2);
+  font-size: var(--fs-xs);
+  color: var(--color-text-faint);
+  pointer-events: none;
+  user-select: none;
+  font-feature-settings: 'tnum';
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- Primary button -------------------------------------------------- */
+
+.primary-btn {
+  position: relative;
+  padding: var(--space-3) var(--space-5);
+  background: var(--color-primary);
+  color: var(--color-primary-on);
+  border: none;
+  border-radius: var(--radius-md);
+  font-family: var(--font-display);
+  font-size: var(--fs-base);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background var(--dur-normal) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-normal) var(--ease-out),
+    opacity var(--dur-normal) var(--ease-out);
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 0.18),
+    inset 0 -1px 0 oklch(0 0 0 / 0.2),
+    0 8px 22px oklch(0.62 0.05 8 / 0.22),
+    0 2px 6px oklch(0 0 0 / 0.3);
+}
+
+.primary-btn:hover:not(:disabled) {
+  background: var(--color-primary-hover);
+}
+
+/* Soft press feedback — no scale (which can read as "tilt" on mobile),
+   just a dim that snaps back quickly. The button stays in place. */
+.primary-btn:active:not(:disabled) {
+  filter: brightness(0.92);
+}
+
+.primary-btn:focus-visible {
+  outline: none;
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 0.18),
+    0 0 0 3px oklch(0.88 0.05 75 / 0.36),
+    0 8px 22px oklch(0.62 0.05 8 / 0.22);
+}
+
+.primary-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.08);
+}
+
+.primary-btn[data-status='saved'] {
+  background: var(--color-success);
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 0.18),
+    0 0 28px var(--color-success),
+    0 4px 12px oklch(0 0 0 / 0.3);
+}
+
+/* --- Bottom tab bar (Apple-style glass) ----------------------------- */
+
+.tab-bar {
+  position: relative;
+  flex: 0 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  height: calc(var(--tab-bar-height) + var(--safe-bottom));
+  padding: 0 var(--space-2) var(--safe-bottom);
+  background: var(--color-surface);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  border-top: 1px solid oklch(1 0 0 / 0.06);
+  box-shadow:
+    inset 0 1px 0 var(--color-edge-hi),
+    0 -10px 30px oklch(0 0 0 / 0.18);
+}
+
+.tab-bar__pill {
+  position: absolute;
+  top: var(--space-2);
+  left: var(--space-2);
+  width: calc(50% - var(--space-2));
+  height: calc(var(--tab-bar-height) - var(--space-4));
+  background: oklch(1 0 0 / 0.06);
+  border: 1px solid oklch(1 0 0 / 0.08);
+  border-radius: var(--radius-md);
+  box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.07);
+  transform: translateX(0);
+  /* Smooth slide, no overshoot. Spring easing was reading as "tilt"
+     when the pill crossed the divider. */
+  transition: transform var(--dur-slow) var(--ease-out);
+  pointer-events: none;
+}
+
+.tab-bar[data-active='stats'] .tab-bar__pill {
+  transform: translateX(100%);
+}
+
+.tab-bar__btn {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  background: transparent;
+  border: none;
+  color: var(--color-text-muted);
+  font: inherit;
+  font-size: var(--fs-xs);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: color var(--dur-normal) var(--ease-out);
+  -webkit-tap-highlight-color: transparent;
+  z-index: 1;
+}
+
+.tab-bar__btn:hover {
+  color: var(--color-text);
+}
+
+.tab-bar__btn:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -6px;
+  border-radius: var(--radius-md);
+}
+
+.tab-bar__btn.is-active {
+  color: var(--color-accent);
+}
+
+.tab-bar__icon {
+  display: block;
+  font-size: 1.35rem;
+  line-height: 1;
+  transform: scale(1);
+  transition: transform var(--dur-normal) var(--ease-out);
+}
+
+.tab-bar__btn.is-active .tab-bar__icon {
+  transform: scale(1.14);
+}
+
+.tab-bar__btn:active .tab-bar__icon {
+  /* Brightness dim, no scale — keeps the icon planted. */
+  filter: brightness(0.85);
+  transition: filter 120ms var(--ease-out);
+}
+
+/* --- Dev login form (dev-only UI) ---------------------------------- */
+
+.dev-login {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  width: min(22rem, 88vw);
+  padding: var(--space-5);
+  background: var(--color-surface-elev);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  box-shadow:
+    inset 0 1px 0 var(--color-edge-hi),
+    0 30px 60px oklch(0 0 0 / 0.45);
+  animation: fade-up var(--dur-slow) var(--ease-out);
+}
+
+.dev-login__title {
+  margin: 0;
+  font-size: var(--fs-md);
+  font-weight: 600;
+}
+
+.dev-login__hint {
+  margin: 0;
+  font-size: var(--fs-xs);
+  color: var(--color-text-muted);
+  line-height: 1.55;
+}
+
+.dev-login__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: var(--fs-xs);
+  color: var(--color-text-muted);
+}
+
+.dev-login__field input {
+  padding: var(--space-3);
+  background: var(--color-input);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  font: inherit;
+  font-size: var(--fs-base);
+  transition:
+    border-color var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out);
+}
+
+.dev-login__field input:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  background: oklch(0 0 0 / 0.45);
+  box-shadow: 0 0 0 3px oklch(0.88 0.05 75 / 0.22);
+}
+
+.dev-login button[type='submit'] {
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-primary);
+  color: var(--color-primary-on);
+  border: none;
+  border-radius: var(--radius-sm);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out);
+}
+
+.dev-login button[type='submit']:hover:not(:disabled) {
+  background: var(--color-primary-hover);
+}
+
+.dev-login button[type='submit']:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.dev-login button[type='submit']:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.dev-login__error {
+  margin: 0;
+  font-size: var(--fs-xs);
+  color: var(--color-error);
 }
