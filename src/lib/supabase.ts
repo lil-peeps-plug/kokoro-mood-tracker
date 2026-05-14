@@ -23,9 +23,11 @@ export const supabase = createClient(url, anonKey, {
   },
 })
 
-// Re-export the endpoint our Edge Function listens on. Co-locating it
-// here means the URL is derived from the same env var the client uses.
-export const AUTH_TELEGRAM_ENDPOINT = `${url}/functions/v1/auth-telegram`
+// Re-export the endpoints our Edge Functions listen on. Co-locating them
+// here means the URLs are derived from the same env var the client uses.
+export const AUTH_TELEGRAM_ENDPOINT   = `${url}/functions/v1/auth-telegram`
+export const ADMIN_STATUS_ENDPOINT    = `${url}/functions/v1/admin-status`
+export const ADMIN_BOOTSTRAP_ENDPOINT = `${url}/functions/v1/admin-bootstrap`
 
 // Anon key is needed in the Authorization/apikey header when calling
 // Edge Functions from the browser, even for endpoints with

@@ -229,6 +229,28 @@ Deno.serve(async (req) => {
       )
     }
 
+    // 4. Mirror the Telegram identity into user_profiles so the admin panel
+    //    can list everyone with one indexed query. Best-effort: a write
+    //    failure here must not break login.
+    const userId = link.user?.id
+    if (userId) {
+      const { error: profileErr } = await supabase
+        .from("user_profiles")
+        .upsert(
+          {
+            id: userId,
+            telegram_id: tgUser.id,
+            username: tgUser.username ?? null,
+            first_name: tgUser.first_name ?? null,
+            last_name: tgUser.last_name ?? null,
+          },
+          { onConflict: "id" },
+        )
+      if (profileErr) {
+        console.error("user_profiles upsert failed:", profileErr.message)
+      }
+    }
+
     return jsonResponse({
       email,
       hashed_token: link.properties.hashed_token,

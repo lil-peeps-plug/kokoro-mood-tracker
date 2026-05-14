@@ -386,6 +386,16 @@ deno_version = 2
 [functions.auth-telegram]
 verify_jwt = false
 
+# admin-status / admin-bootstrap are pre-login: the admin doesn't have a
+# JWT yet on the first visit to /admin, so verify_jwt must be off here too.
+# admin-bootstrap self-gates with "admin already exists → 409", and admin
+# reads after login go through the regular Supabase client (RLS+is_admin()).
+[functions.admin-status]
+verify_jwt = false
+
+[functions.admin-bootstrap]
+verify_jwt = false
+
 [analytics]
 enabled = true
 port = 54327

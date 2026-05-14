@@ -1,0 +1,928 @@
+/*
+  ==========================================================================
+  Kokoro — admin panel styles (laptop-first, frosted glass)
+  --------------------------------------------------------------------------
+  Lighter than the main app: dusky mauve base, frosted-glass surfaces with
+  backdrop-filter and luminous edge highlights. No bg.webp, no lantern, no
+  sakura — only the radial vignette behind the glass.
+  ==========================================================================
+*/
+
+.admin {
+  position: relative;
+  min-height: 100dvh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font-display);
+  color: var(--color-text);
+  /* Dusky mauve base — calm and pulled back, paired with the
+     subtle radial backdrop above it. */
+  background: oklch(0.16 0.028 320);
+  padding:
+    calc(var(--safe-top) + var(--space-2))
+    var(--safe-right)
+    calc(var(--safe-bottom) + var(--space-3))
+    var(--safe-left);
+  animation: admin-app-in var(--dur-slow) var(--ease-out);
+}
+
+@keyframes admin-app-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* Radial vignette — stays, just lighter and warmer. Top centre lifts
+   ~12% lighter, a warm rose breath in the lower-left, gentle fade to
+   a darker rim. This is the atmospheric layer behind the glass. */
+.admin__backdrop {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(
+      ellipse 90% 60% at 50% -10%,
+      oklch(0.32 0.05 320 / 0.50) 0%,
+      transparent 65%
+    ),
+    radial-gradient(
+      ellipse 70% 55% at 16% 92%,
+      oklch(0.48 0.10 12 / 0.22) 0%,
+      transparent 60%
+    ),
+    radial-gradient(
+      ellipse 70% 55% at 88% 10%,
+      oklch(0.46 0.07 75 / 0.16) 0%,
+      transparent 60%
+    ),
+    radial-gradient(
+      ellipse at 50% 50%,
+      oklch(0.20 0.028 320) 0%,
+      oklch(0.09 0.020 320) 100%
+    );
+}
+
+/* ----- Header (wordmark + ADMIN PANEL subtitle) -----------------------
+   Treated as a real masthead: generous breathing room, breathing glow
+   behind the kanji, a slow gradient sheen across the wordmark, and a
+   subtitle flanked by gently-pulsing hairlines. */
+
+.admin__header {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  /* Logo pulled up close to the top edge — only enough padding to
+     clear the music button row, no extra masthead breathing room. */
+  padding: var(--space-3) var(--space-4) var(--space-4);
+  text-align: center;
+  animation: admin-header-in var(--dur-slow) var(--ease-out) 120ms both;
+}
+
+@keyframes admin-header-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Warm bloom behind the brand. Sits below the text, breathes in time
+   with the kanji. Mix-blend-mode: screen so it adds light rather than
+   muddying the underlying mauve. */
+.admin__glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 360px;
+  height: 220px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: -1;
+  background: radial-gradient(
+    ellipse at center,
+    oklch(0.86 0.14 70 / 0.22) 0%,
+    oklch(0.72 0.12 60 / 0.11) 28%,
+    oklch(0.55 0.09 50 / 0.04) 55%,
+    transparent 78%
+  );
+  filter: blur(36px);
+  mix-blend-mode: screen;
+  animation:
+    admin-glow-breathe var(--dur-pulse) var(--ease-glide) infinite,
+    admin-glow-in 1400ms var(--ease-out) 400ms both;
+}
+
+@keyframes admin-glow-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes admin-glow-breathe {
+  0%, 100% { opacity: 0.55; transform: translate(-50%, -50%) scale(1);    }
+  50%      { opacity: 0.80; transform: translate(-50%, -50%) scale(1.06); }
+}
+
+.admin__brand {
+  position: relative;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.5em;
+}
+
+/* Wordmark with a slow diagonal sheen that drifts across the letters.
+   background-clip:text on a 3x-wide gradient + a long, ease-glide loop
+   reads as a quiet shimmer, never as a "scrolling marquee." */
+.admin__wordmark {
+  font-family: var(--font-display);
+  font-size: var(--fs-xl);
+  font-weight: 700;
+  letter-spacing: 0.42em;
+  /* Letter-spacing pushes the last glyph past its box; pad to recentre. */
+  padding-left: 0.42em;
+  text-transform: uppercase;
+  font-synthesis: none;
+  color: var(--color-text);
+  background: linear-gradient(
+    100deg,
+    var(--color-text)         0%,
+    var(--color-text)        38%,
+    oklch(0.92 0.04 75 / 1)  50%,
+    var(--color-text)        62%,
+    var(--color-text)       100%
+  );
+  background-size: 280% 100%;
+  background-position: 100% 0;
+  -webkit-background-clip: text;
+          background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: admin-wordmark-sheen 9s var(--ease-glide) 2s infinite;
+}
+
+@keyframes admin-wordmark-sheen {
+  0%   { background-position: 120% 0; }
+  100% { background-position: -120% 0; }
+}
+
+.admin__kanji {
+  font-family: var(--font-display);
+  font-size: var(--fs-lg);
+  font-weight: 400;
+  color: var(--color-accent);
+  opacity: 0.85;
+  line-height: 1;
+  font-synthesis: none;
+  text-shadow:
+    0 0 22px oklch(0.84 0.12 72 / 0.30),
+    0 0 52px oklch(0.78 0.10 60 / 0.14);
+  animation: admin-kanji-breathe 5.4s var(--ease-glide) 1200ms infinite;
+}
+
+@keyframes admin-kanji-breathe {
+  0%, 100% {
+    opacity: 0.82;
+    transform: scale(1);
+    text-shadow:
+      0 0 20px oklch(0.82 0.12 72 / 0.26),
+      0 0 46px oklch(0.76 0.10 60 / 0.12);
+  }
+  50% {
+    opacity: 0.96;
+    transform: scale(1.03);
+    text-shadow:
+      0 0 28px oklch(0.88 0.14 72 / 0.38),
+      0 0 64px oklch(0.80 0.12 60 / 0.20);
+  }
+}
+
+/* Subtitle row: two hairlines flanking the label, each fading gently
+   in and out of view so the whole strip feels like it's quietly
+   breathing along with the kanji above it. */
+.admin__subtitle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  font-family: var(--font-display);
+  font-size: var(--fs-xs);
+  font-weight: 500;
+  letter-spacing: 0.42em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.admin__subtitle-line {
+  display: inline-block;
+  width: 28px;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--color-text-faint) 50%,
+    transparent 100%
+  );
+  opacity: 0.55;
+  animation: admin-subtitle-line 5s var(--ease-glide) infinite;
+}
+
+.admin__subtitle-text {
+  /* Letter-spacing pushes the last glyph past its box; pad to recentre. */
+  padding-left: 0.42em;
+  opacity: 0.78;
+}
+
+@keyframes admin-subtitle-line {
+  0%, 100% { opacity: 0.35; }
+  50%      { opacity: 0.80; }
+}
+
+/* Whisper-thin divider at the foot of the header — fades in from
+   nothing on load, then settles. Defines the masthead zone without
+   feeling like a hard rule. */
+.admin__divider {
+  display: block;
+  width: min(340px, 65%);
+  height: 1px;
+  margin-top: var(--space-3);
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    oklch(1 0 0 / 0.16) 50%,
+    transparent 100%
+  );
+  opacity: 0;
+  animation: admin-divider-in 1400ms var(--ease-out) 800ms forwards;
+}
+
+@keyframes admin-divider-in {
+  from { opacity: 0; transform: scaleX(0.2); }
+  to   { opacity: 1; transform: scaleX(1);   }
+}
+
+/* ----- Main area (login / dashboard) ---------------------------------- */
+
+.admin__main {
+  position: relative;
+  z-index: 1;
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-3) var(--space-4) var(--space-5);
+}
+
+.admin__status {
+  color: var(--color-text-faint);
+  font-size: var(--fs-sm);
+  letter-spacing: 0.12em;
+}
+
+/* ----- Login / bootstrap form (frosted glass card) -------------------- */
+
+.admin__login {
+  width: 100%;
+  max-width: 340px;
+  padding: var(--space-5) var(--space-4);
+  /* Frosted glass — translucent enough that the radial vignette reads
+     through. Heavy blur + saturation boost is the trick that makes it
+     feel like real glass rather than a flat translucent rectangle. */
+  background:
+    linear-gradient(
+      180deg,
+      oklch(0.30 0.035 320 / 0.45) 0%,
+      oklch(0.22 0.030 320 / 0.55) 100%
+    );
+  border: 1px solid oklch(1 0 0 / 0.10);
+  border-radius: var(--radius-md);
+  backdrop-filter: blur(28px) saturate(170%);
+  -webkit-backdrop-filter: blur(28px) saturate(170%);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 0.10),
+    inset 0 -1px 0 oklch(0 0 0 / 0.20),
+    0 22px 56px oklch(0 0 0 / 0.45);
+  animation: admin-card-in var(--dur-normal) var(--ease-out);
+}
+
+@keyframes admin-card-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.admin__login-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--fs-base);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: var(--color-text);
+}
+
+.admin__login-hint {
+  margin: 0;
+  font-size: var(--fs-xs);
+  color: var(--color-text-muted);
+  line-height: 1.5;
+}
+
+.admin__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.admin__label {
+  font-family: var(--font-display);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  color: var(--color-text-faint);
+  text-transform: uppercase;
+}
+
+.admin__input {
+  /* Frosted-glass input. Translucent dark layer with high-blur, a thin
+     top highlight, and a clean border. Darker than the card behind it
+     so the field reads as recessed. */
+  background: oklch(0.16 0.025 320 / 0.55);
+  backdrop-filter: blur(20px) saturate(170%);
+  -webkit-backdrop-filter: blur(20px) saturate(170%);
+  border: 1px solid oklch(1 0 0 / 0.08);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  font-family: var(--font-display);
+  font-size: var(--fs-sm);
+  padding: var(--space-2) var(--space-3);
+  outline: none;
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 0.05);
+  transition:
+    border-color var(--dur-fast) var(--ease-out),
+    background   var(--dur-fast) var(--ease-out),
+    box-shadow   var(--dur-normal) var(--ease-out);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.admin__input::placeholder {
+  color: var(--color-text-faint);
+  opacity: 0.55;
+}
+
+.admin__input:hover:not([readonly]) {
+  border-color: oklch(1 0 0 / 0.14);
+  background: oklch(0.18 0.028 320 / 0.62);
+}
+
+.admin__input:focus {
+  border-color: var(--color-accent);
+  background: oklch(0.20 0.028 320 / 0.70);
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 0.07),
+    0 0 0 3px oklch(0.88 0.05 75 / 0.18);
+}
+
+.admin__input[readonly] {
+  color: var(--color-text-muted);
+  opacity: 0.85;
+  cursor: default;
+}
+
+.admin__submit {
+  margin-top: var(--space-1);
+  background: var(--color-primary);
+  color: var(--color-primary-on);
+  border: 1px solid oklch(1 0 0 / 0.10);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-display);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  padding: var(--space-2) var(--space-3);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 0.18),
+    0 8px 24px oklch(0 0 0 / 0.28);
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    filter     var(--dur-fast) var(--ease-out),
+    opacity    var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-normal) var(--ease-out);
+}
+
+.admin__submit:hover:not(:disabled) {
+  background: var(--color-primary-hover);
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 0.22),
+    0 12px 28px oklch(0 0 0 / 0.34);
+}
+
+.admin__submit:active:not(:disabled) {
+  /* Brightness, not scale — scale reads as tilt on mobile. */
+  filter: brightness(0.92);
+}
+
+.admin__submit:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.admin__error {
+  margin: 0;
+  color: var(--color-error);
+  font-size: var(--fs-xs);
+  line-height: 1.45;
+  animation: admin-error-in var(--dur-normal) var(--ease-out);
+}
+
+@keyframes admin-error-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0);   }
+}
+
+/* ----- Loading spinner (admin-loading) -------------------------------- */
+
+.admin-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  animation: admin-card-in var(--dur-normal) var(--ease-out);
+}
+
+.admin-loading__ring {
+  position: relative;
+  width: 68px;
+  height: 68px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Two concentric rings drifting in opposite directions. Each has only
+   one coloured edge segment (border-top); the rest is faint white. */
+.admin-loading__ring-outer,
+.admin-loading__ring-inner {
+  position: absolute;
+  border-radius: 50%;
+  border-style: solid;
+  border-width: 1.5px;
+  border-color: oklch(1 0 0 / 0.08);
+  pointer-events: none;
+}
+
+.admin-loading__ring-outer {
+  inset: 0;
+  border-top-color: var(--color-accent);
+  animation: admin-spin 2.4s var(--ease-glide) infinite;
+}
+
+.admin-loading__ring-inner {
+  inset: 10px;
+  border-top-color: var(--color-primary);
+  animation: admin-spin 3.6s var(--ease-glide) infinite reverse;
+}
+
+@keyframes admin-spin {
+  to { transform: rotate(360deg); }
+}
+
+.admin-loading__kanji {
+  position: relative;
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  font-weight: 500;
+  line-height: 1;
+  font-synthesis: none;
+  color: var(--color-accent);
+  text-shadow:
+    0 0 18px oklch(0.84 0.12 72 / 0.28),
+    0 0 42px oklch(0.78 0.10 60 / 0.14);
+  animation: admin-loading-pulse 2.6s var(--ease-glide) infinite;
+}
+
+@keyframes admin-loading-pulse {
+  0%, 100% { opacity: 0.78; }
+  50%      { opacity: 1; }
+}
+
+.admin-loading__label {
+  font-family: var(--font-display);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.36em;
+  text-transform: uppercase;
+  color: var(--color-text-faint);
+  /* Letter-spacing throws the last glyph; pad to recentre visually. */
+  padding-left: 0.36em;
+  animation: admin-loading-pulse 2.6s var(--ease-glide) infinite;
+}
+
+/* ----- View swap (login / loading / dashboard crossfade) -------------- */
+/* .admin__swap is a thin layout shell that fades every child in on
+   mount. Combined with each view's own admin-card-in animation, state
+   changes read as a smooth swap rather than a jump. */
+.admin__swap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.admin__swap > * {
+  animation: admin-swap-in var(--dur-slow) var(--ease-out);
+}
+
+@keyframes admin-swap-in {
+  from { opacity: 0; transform: translateY(14px); filter: blur(4px); }
+  to   { opacity: 1; transform: translateY(0);    filter: blur(0);   }
+}
+
+/* ----- Dashboard placeholder (filled in Phase 10.4) ------------------- */
+
+.admin__dashboard {
+  width: 100%;
+  max-width: 960px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  animation: admin-card-in var(--dur-normal) var(--ease-out);
+}
+
+.admin__welcome {
+  margin: 0;
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+  letter-spacing: 0.06em;
+}
+
+.admin__welcome strong {
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.admin__placeholder {
+  width: 100%;
+  min-height: 340px;
+  display: grid;
+  place-items: center;
+  background:
+    linear-gradient(
+      180deg,
+      oklch(0.28 0.035 320 / 0.30) 0%,
+      oklch(0.20 0.028 320 / 0.42) 100%
+    );
+  backdrop-filter: blur(28px) saturate(170%);
+  -webkit-backdrop-filter: blur(28px) saturate(170%);
+  border: 1px dashed oklch(1 0 0 / 0.10);
+  border-radius: var(--radius-lg);
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 0.07),
+    0 24px 56px oklch(0 0 0 / 0.34);
+  color: var(--color-text-faint);
+  font-size: var(--fs-sm);
+  letter-spacing: 0.06em;
+  text-align: center;
+  padding: var(--space-5);
+}
+
+/* ----- Dashboard layout ------------------------------------------------ */
+
+.admin__dashboard-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.admin__dashboard-stats {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--fs-xs);
+  font-weight: 500;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--color-text-faint);
+}
+
+.admin__dashboard-stats strong {
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.admin__graph-wrap {
+  width: 100%;
+  min-height: 360px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ----- Error panel (dashboard) ---------------------------------------- */
+/* Shown when the graph data fetch fails. Calmer than a raw red <p> —
+   muted card with a single CTA so the user can recover in one click. */
+
+.admin__error-panel {
+  margin: auto;
+  max-width: 440px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-5) var(--space-5);
+  text-align: center;
+  background:
+    linear-gradient(
+      180deg,
+      oklch(0.30 0.035 320 / 0.40) 0%,
+      oklch(0.22 0.030 320 / 0.52) 100%
+    );
+  backdrop-filter: blur(24px) saturate(170%);
+  -webkit-backdrop-filter: blur(24px) saturate(170%);
+  border: 1px solid oklch(0.55 0.12 25 / 0.28);
+  border-radius: var(--radius-md);
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 0.08),
+    0 22px 56px oklch(0 0 0 / 0.45);
+  animation: admin-card-in var(--dur-normal) var(--ease-out);
+}
+
+.admin__error-headline {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--fs-base);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--color-text);
+}
+
+.admin__error-detail {
+  margin: 0;
+  font-size: var(--fs-xs);
+  color: var(--color-error);
+  /* Word-break so a long Postgres error doesn't overflow the card. */
+  word-break: break-word;
+  line-height: 1.5;
+}
+
+.admin__error-hint {
+  margin: 0;
+  font-size: var(--fs-xs);
+  color: var(--color-text-muted);
+  line-height: 1.55;
+}
+
+.admin__error-hint code {
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+  padding: 0.1em 0.45em;
+  background: oklch(0.16 0.025 320 / 0.6);
+  border: 1px solid oklch(1 0 0 / 0.06);
+  border-radius: 4px;
+  color: var(--color-text);
+}
+
+.admin__error-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+}
+
+.admin__error-button {
+  /* Tighter than the login submit — looks like a small button, not a CTA. */
+  margin: 0 !important;
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--fs-xs);
+}
+
+/* ----- MoodGraph (Obsidian-style network) ----------------------------- */
+
+.mood-graph {
+  position: relative;
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: 360px;
+  background:
+    linear-gradient(
+      180deg,
+      oklch(0.22 0.030 320 / 0.30) 0%,
+      oklch(0.14 0.022 320 / 0.42) 100%
+    );
+  backdrop-filter: blur(24px) saturate(170%);
+  -webkit-backdrop-filter: blur(24px) saturate(170%);
+  border: 1px solid oklch(1 0 0 / 0.08);
+  border-radius: var(--radius-md);
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 0.07),
+    0 24px 60px oklch(0 0 0 / 0.42);
+  overflow: hidden;
+  animation: admin-card-in var(--dur-normal) var(--ease-out);
+}
+
+.mood-graph__svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  /* Edge stroke draws from currentColor so we can dim/light via CSS. */
+  color: oklch(0.78 0.06 12);
+}
+
+.mood-graph__empty {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--color-text-faint);
+  font-size: var(--fs-sm);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* --- Edges --- */
+.mood-graph__edge {
+  fill: none;
+  stroke: currentColor;
+  transition:
+    stroke-opacity var(--dur-fast) var(--ease-out),
+    stroke-width   var(--dur-fast) var(--ease-out);
+}
+
+.mood-graph__edge.is-lit { stroke-opacity: 0.42; }
+.mood-graph__edge.is-dim { stroke-opacity: 0.06; }
+
+/* --- Nodes --- */
+.mood-graph__node {
+  cursor: pointer;
+  transition: opacity var(--dur-fast) var(--ease-out);
+}
+
+.mood-graph__node.is-dim   { opacity: 0.22; }
+.mood-graph__node.is-lit   { opacity: 1; }
+
+.mood-graph__node-halo {
+  pointer-events: none;
+  transition: r 240ms var(--ease-out);
+}
+
+.mood-graph__node-core {
+  fill: var(--color-primary);
+  stroke: oklch(1 0 0 / 0.55);
+  stroke-width: 0.8;
+  transition:
+    r 240ms var(--ease-out),
+    fill var(--dur-fast) var(--ease-out);
+}
+
+.mood-graph__node.is-hover .mood-graph__node-core {
+  fill: var(--color-primary-hover);
+}
+
+.mood-graph__node-label {
+  fill: var(--color-text-muted);
+  font-family: var(--font-display);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  pointer-events: none;
+  user-select: none;
+  transition: fill var(--dur-fast) var(--ease-out);
+}
+
+.mood-graph__node.is-hover .mood-graph__node-label {
+  fill: var(--color-text);
+}
+
+/* --- Tooltip --- */
+.mood-graph__tooltip {
+  position: absolute;
+  pointer-events: none;
+  transform: translate(-50%, -100%);
+  min-width: 140px;
+  max-width: 240px;
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-card);
+  border: 1px solid var(--color-card-edge);
+  border-radius: var(--radius-sm);
+  box-shadow:
+    inset 0 1px 0 var(--color-edge-hi),
+    0 12px 32px oklch(0 0 0 / 0.55);
+  text-align: center;
+  white-space: nowrap;
+  animation: admin-tooltip-in 220ms var(--ease-out);
+  z-index: 2;
+}
+
+@keyframes admin-tooltip-in {
+  from { opacity: 0; transform: translate(-50%, calc(-100% + 4px)); }
+  to   { opacity: 1; transform: translate(-50%, -100%); }
+}
+
+.mood-graph__tooltip-name {
+  font-family: var(--font-display);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.mood-graph__tooltip-handle {
+  margin-top: 2px;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  color: var(--color-text-muted);
+  letter-spacing: 0.04em;
+}
+
+.admin__signout {
+  background: oklch(1 0 0 / 0.04);
+  border: 1px solid oklch(1 0 0 / 0.12);
+  color: var(--color-text-muted);
+  font-family: var(--font-display);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  padding: var(--space-2) var(--space-5);
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  backdrop-filter: blur(14px) saturate(180%);
+  -webkit-backdrop-filter: blur(14px) saturate(180%);
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    color        var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    background   var(--dur-fast) var(--ease-out),
+    filter       var(--dur-fast) var(--ease-out);
+}
+
+.admin__signout:hover {
+  color: var(--color-text);
+  border-color: var(--color-accent);
+  background: oklch(1 0 0 / 0.08);
+}
+
+.admin__signout:active {
+  filter: brightness(0.92);
+}
+
+/* ----- Laptop / wide-screen tuning ------------------------------------ */
+
+@media (min-width: 900px) {
+  .admin__header {
+    padding-top: var(--space-3);
+    padding-bottom: var(--space-4);
+  }
+  .admin__wordmark {
+    font-size: 1.85rem;
+  }
+  .admin__kanji {
+    font-size: 1.55rem;
+  }
+  .admin__subtitle-line {
+    width: 36px;
+  }
+  .admin__glow {
+    width: 440px;
+    height: 260px;
+  }
+  .admin__divider {
+    width: min(380px, 55%);
+  }
+  .admin__login {
+    max-width: 360px;
+    padding: var(--space-5) var(--space-5);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin,
+  .admin__header,
+  .admin__login,
+  .admin__dashboard,
+  .admin__glow,
+  .admin__wordmark,
+  .admin__kanji,
+  .admin__subtitle-line,
+  .admin__divider,
+  .admin__error,
+  .admin__swap > *,
+  .admin-loading,
+  .admin-loading__ring-outer,
+  .admin-loading__ring-inner,
+  .admin-loading__kanji,
+  .admin-loading__label {
+    animation: none;
+  }
+  .admin__wordmark {
+    /* Restore solid fill once the sheen animation is off. */
+    -webkit-text-fill-color: var(--color-text);
+    color: var(--color-text);
+  }
+  .admin__divider { opacity: 1; transform: none; }
+}

@@ -117,11 +117,26 @@
   --phone-w: 393px;
   --phone-max-h: 852px;
 
-  /* --- Safe-area insets ------------------------------------------------ */
-  --safe-top:    env(safe-area-inset-top, 0px);
-  --safe-bottom: env(safe-area-inset-bottom, 0px);
-  --safe-left:   env(safe-area-inset-left, 0px);
-  --safe-right:  env(safe-area-inset-right, 0px);
+  /* --- Safe-area insets ------------------------------------------------
+     Two sources, take the larger:
+       env(safe-area-inset-*)  — what the browser/WebView reports
+       --tg-safe-*             — what Telegram WebApp 8.0+ tells us
+     Telegram on iPhone sometimes reports the inset only through its
+     own API (env() returns 0), and standalone Safari reports it only
+     via env(). max() across both is the safest combination.
+
+     There's also a hard floor on --safe-top: even devices that report
+     no inset get 12px of breathing room so the banner can't read as
+     stuck against the bezel. */
+  --tg-safe-top:    0px;
+  --tg-safe-bottom: 0px;
+  --tg-safe-left:   0px;
+  --tg-safe-right:  0px;
+
+  --safe-top:    max(env(safe-area-inset-top,    0px), var(--tg-safe-top));
+  --safe-bottom: max(env(safe-area-inset-bottom, 0px), var(--tg-safe-bottom));
+  --safe-left:   max(env(safe-area-inset-left,   0px), var(--tg-safe-left));
+  --safe-right:  max(env(safe-area-inset-right,  0px), var(--tg-safe-right));
 
   /* --- Motion ----------------------------------------------------------- */
   /* Apple-style easing — soft landings, no hard stops. Durations sit a
