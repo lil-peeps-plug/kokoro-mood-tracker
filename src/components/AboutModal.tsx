@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { LOCALES, useI18n } from '@/lib/i18n'
+import LegalModal from '@/components/LegalModal'
 
 const STORAGE_KEY = 'kokoro:about-dismissed'
 const EXIT_MS = 480 // matches the CSS transition on .about-backdrop / .about-card
@@ -28,6 +29,7 @@ export default function AboutModal() {
   const [mounted, setMounted] = useState(() => !readDismissed())
   const [closing, setClosing] = useState(false)
   const [skipNext, setSkipNext] = useState(true)
+  const [legalOpen, setLegalOpen] = useState(false)
 
   useEffect(() => {
     if (!mounted || closing) return
@@ -112,11 +114,20 @@ export default function AboutModal() {
           type="button"
           className="primary-btn about-card__ok"
           onClick={startClose}
-          autoFocus
         >
           {t.aboutOk}
         </button>
+
+        <button
+          type="button"
+          className="about-card__legal-link"
+          onClick={() => setLegalOpen(true)}
+        >
+          {t.legalLink}
+        </button>
       </div>
+
+      <LegalModal open={legalOpen} onClose={() => setLegalOpen(false)} />
     </div>
   )
 }

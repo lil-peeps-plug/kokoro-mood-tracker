@@ -116,6 +116,28 @@ body {
   }
 }
 
+/* --- Admin route escape hatch ----------------------------------------
+   The /admin URL gets its own fullscreen treatment — no phone frame, no
+   centred padding, no fixed dimensions. Set as a body class in main.tsx
+   before first render so there's no flash of phone-framed content. */
+body.is-admin-route {
+  padding: 0 !important;
+  overflow: auto;
+  display: block;
+  background: transparent;
+}
+
+body.is-admin-route #root {
+  width: 100% !important;
+  max-width: none !important;
+  height: auto !important;
+  min-height: 100dvh;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  overflow: visible;
+  isolation: auto;
+}
+
 /* --- App shell --------------------------------------------------------- */
 
 .app {
@@ -244,8 +266,13 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  /* Top padding: whichever is larger — the system safe-area + a
+     comfort gap, OR an explicit 64 px floor. The floor guarantees
+     the KOKORO 心 wordmark clears the iPhone 15 Pro Dynamic Island
+     (which extends to ~48 px from the device top) even when env()
+     and the Telegram safeAreaInset both report 0. */
   padding:
-    calc(var(--safe-top) + var(--space-4))
+    max(calc(var(--safe-top) + var(--space-4)), var(--space-10))
     var(--space-5)
     var(--space-4);
   z-index: 4;
@@ -294,60 +321,19 @@ body {
   line-height: 1;
 }
 
-/* --- Exit button (top-left of banner, leftmost) --------------------- */
-
-.exit-btn {
-  position: absolute;
-  top: calc(var(--safe-top) + var(--space-2));
-  left: var(--space-4);
-  z-index: 5;
-  width: var(--topbar-icon-size);
-  height: var(--topbar-icon-size);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-full);
-  color: var(--color-text-faint);
-  cursor: pointer;
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  -webkit-tap-highlight-color: transparent;
-  box-shadow:
-    inset 0 1px 0 var(--color-edge-hi),
-    0 4px 14px oklch(0 0 0 / 0.25);
-  transition:
-    color var(--dur-fast) var(--ease-out),
-    border-color var(--dur-fast) var(--ease-out),
-    background var(--dur-fast) var(--ease-out),
-    transform var(--dur-fast) var(--ease-out);
-}
-
-.exit-btn:hover {
-  color: var(--color-error);
-  border-color: var(--color-error);
-}
-
-.exit-btn:focus-visible {
-  outline: none;
-  border-color: var(--color-accent);
-  box-shadow:
-    inset 0 1px 0 var(--color-edge-hi),
-    0 0 0 3px oklch(0.88 0.05 75 / 0.32);
-}
-
-.exit-btn:active {
-  transform: scale(0.94);
-}
-
-/* --- Music control (top-left of banner, right of exit) -------------- */
+/* --- Music control (top-left of banner) ----------------------------
+   Pushed well right of the screen edge so Telegram's long "Back/
+   Close" pill (which can carry text + chevron) has clear room
+   beside us. The maths:
+     space-4 (16 px)  → TG close-button left padding
+   + space-10 (64 px) → footprint of a text-pill TG close button
+   + space-3 (12 px)  → comfortable gap before our music button
+   = our music button's left edge (~ 92 px). */
 
 .music {
   position: absolute;
   top: calc(var(--safe-top) + var(--space-2));
-  /* Sit immediately to the right of the Exit button. */
-  left: calc(var(--space-4) + var(--topbar-icon-size) + var(--space-2));
+  left: calc(var(--space-4) + var(--space-10) + var(--space-3));
   z-index: 5;
 }
 
@@ -361,7 +347,9 @@ body {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-full);
-  color: var(--color-text-faint);
+  /* Match .lang__btn's default text color so the two triggers
+     read as the same component family. */
+  color: var(--color-text-muted);
   cursor: pointer;
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
@@ -377,13 +365,10 @@ body {
 }
 
 /* SVG default display: inline leaves a baseline gap that nudges the
-   icon down inside the button. Block + a tiny negative Y compensates
-   for the music note's optical centre being below its geometric
-   centre (most mass is in the note heads, stem extends up). */
-.music-btn svg,
-.exit-btn svg {
+   icon down inside the button. `display: block` removes the baseline
+   so the flex container can geometrically centre the 24x24 viewBox. */
+.music-btn svg {
   display: block;
-  transform: translateY(-1px);
 }
 
 .music-btn:hover:not(:disabled) {
@@ -413,23 +398,25 @@ body {
   border-color: oklch(0.88 0.05 75 / 0.45);
 }
 
-/* Popover with play/pause + volume slider */
+/* Popover with play/pause + volume slider — anchored to the
+   music-button trigger (top-left), opening downward. */
 .music-menu {
   position: absolute;
-  /* Open clearly BELOW the banner's bottom edge, not inside its padding. */
+  /* Drop below the button with breathing room. */
   top: calc(100% + var(--space-5));
   left: 0;
   min-width: 220px;
   padding: var(--space-2);
-  /* Fully opaque card surface — the popover reads as a solid panel,
-     not a translucent overlay. Matches the main card look. */
-  background: var(--color-card);
-  border: 1px solid var(--color-card-edge);
+  /* Same translucent backdrop-filter surface as .lang__menu — the two
+     popovers now feel like the same component family. */
+  background: var(--color-surface-elev);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
+  backdrop-filter: blur(32px) saturate(180%);
+  -webkit-backdrop-filter: blur(32px) saturate(180%);
   box-shadow:
     inset 0 1px 0 var(--color-edge-hi),
-    0 22px 60px oklch(0 0 0 / 0.65),
-    0 6px 20px oklch(0 0 0 / 0.4);
+    0 18px 50px oklch(0 0 0 / 0.55);
   /* Soft fade + gentle slide. Matches the language popover. */
   opacity: 0;
   transform: translateY(-6px);
@@ -691,7 +678,7 @@ body {
 
 .lang__menu {
   position: absolute;
-  /* Open clearly BELOW the banner's bottom edge, not inside its padding. */
+  /* Anchored to the language button (top-right), opening downward. */
   top: calc(100% + var(--space-5));
   right: 0;
   margin: 0;
@@ -1296,6 +1283,163 @@ body {
   align-self: stretch;
 }
 
+/* Tiny "Privacy & terms" link under the OK button — opens LegalModal. */
+.about-card__legal-link {
+  align-self: center;
+  margin-top: var(--space-1);
+  padding: var(--space-1) var(--space-2);
+  background: transparent;
+  border: none;
+  font-family: var(--font-display);
+  font-size: var(--fs-xs);
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-faint);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  -webkit-tap-highlight-color: transparent;
+  transition: color var(--dur-fast) var(--ease-out);
+}
+
+.about-card__legal-link:hover {
+  color: var(--color-accent);
+}
+
+.about-card__legal-link:focus-visible {
+  outline: none;
+  color: var(--color-accent);
+  box-shadow: 0 0 0 2px oklch(0.88 0.05 75 / 0.30);
+}
+
+/* --- Legal modal (Privacy + Terms) ----------------------------------- */
+
+.legal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 70;            /* above the about modal */
+  display: grid;
+  place-items: center;
+  padding: var(--space-4);
+  background: oklch(0 0 0 / 0.65);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  animation: about-backdrop-in 360ms var(--ease-out);
+}
+
+.legal-card {
+  position: relative;
+  width: 100%;
+  max-width: 560px;
+  max-height: min(80vh, 720px);
+  display: flex;
+  flex-direction: column;
+  background: var(--color-card);
+  border: 1px solid var(--color-card-edge);
+  border-radius: var(--radius-lg);
+  box-shadow:
+    inset 0 1px 0 var(--color-edge-hi),
+    0 32px 80px oklch(0 0 0 / 0.55);
+  animation: about-card-in 440ms var(--ease-out);
+  overflow: hidden;
+}
+
+.legal-card__head {
+  padding: var(--space-5) var(--space-5) var(--space-3);
+  border-bottom: 1px solid oklch(1 0 0 / 0.06);
+}
+
+.legal-card__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--fs-lg);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--color-text);
+}
+
+.legal-card__sub {
+  margin: var(--space-1) 0 0;
+  font-size: var(--fs-xs);
+  color: var(--color-text-faint);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.legal-card__body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: var(--space-4) var(--space-5);
+  font-size: var(--fs-sm);
+  line-height: 1.6;
+  color: var(--color-text-muted);
+  /* Subtle scrollbar styling so the content can scroll without a bulky
+     rail. Falls back gracefully on browsers that ignore it. */
+  scrollbar-width: thin;
+  scrollbar-color: oklch(1 0 0 / 0.18) transparent;
+}
+
+.legal-card__body section + section {
+  margin-top: var(--space-5);
+}
+
+.legal-card__body h3 {
+  margin: 0 0 var(--space-2);
+  font-family: var(--font-display);
+  font-size: var(--fs-md);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--color-text);
+}
+
+.legal-card__body h4 {
+  margin: var(--space-3) 0 var(--space-1);
+  font-family: var(--font-display);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.legal-card__body p {
+  margin: 0 0 var(--space-2);
+}
+
+.legal-card__body ul {
+  margin: 0 0 var(--space-2);
+  padding-left: var(--space-5);
+}
+
+.legal-card__body li {
+  margin-bottom: var(--space-1);
+}
+
+.legal-card__body strong {
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.legal-card__body a {
+  color: var(--color-accent);
+  text-decoration: underline;
+  text-decoration-color: oklch(0.88 0.05 75 / 0.3);
+  text-underline-offset: 2px;
+}
+
+.legal-card__body a:hover {
+  text-decoration-color: var(--color-accent);
+}
+
+.legal-card__foot {
+  padding: var(--space-3) var(--space-5) var(--space-5);
+  border-top: 1px solid oklch(1 0 0 / 0.06);
+}
+
+.legal-card__close {
+  width: 100%;
+}
+
 @keyframes about-backdrop-in {
   from { opacity: 0; }
   to   { opacity: 1; }
@@ -1688,6 +1832,103 @@ body {
   height: 100% !important;
 }
 
+/* --- Mood Calendar (month grid, gradient pink cells) ---------------- */
+/* Inline hex colors on the cells themselves (set in the component) so
+   html2canvas captures them straight through for the PDF export. */
+
+.mood-calendar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background: var(--color-input);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.mood-calendar__head {
+  font-family: var(--font-display);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  text-align: center;
+  padding-bottom: var(--space-1);
+}
+
+.mood-calendar__weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.mood-calendar__weekday {
+  font-family: var(--font-display);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--color-text-faint);
+  text-align: center;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.7;
+  padding: 2px 0;
+}
+
+.mood-calendar__grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.mood-calendar__cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1;
+  border-radius: 6px;
+  font-family: var(--font-display);
+  font-size: var(--fs-xs);
+  font-weight: 500;
+  /* Background + color are set inline per cell from the score gradient. */
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+
+.mood-calendar__cell.has-score {
+  font-weight: 600;
+}
+
+.mood-calendar__cell--blank {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.mood-calendar__legend {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding-top: var(--space-1);
+  font-family: var(--font-display);
+  font-size: var(--fs-xs);
+  color: var(--color-text-faint);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.mood-calendar__legend-swatch {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+}
+
+.mood-calendar__legend-label {
+  padding: 0 var(--space-1);
+  opacity: 0.85;
+  font-weight: 600;
+}
+
 /* --- History list --- */
 
 .history {
@@ -1882,6 +2123,109 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+/* --- Thank-you interlude (shown for 3.6 s after a mood is saved) ----- */
+
+.mood-thanks-card {
+  /* Card takes its own size; nothing else inside so the thank-you
+     stack feels like a small breath of air. */
+}
+
+.mood-thanks {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-8) var(--space-5) var(--space-10);
+  text-align: center;
+  animation: mood-thanks-in var(--dur-slow) var(--ease-out);
+}
+
+@keyframes mood-thanks-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0);   }
+}
+
+.mood-thanks__kanji {
+  font-family: var(--font-display);
+  font-size: 4rem;
+  font-weight: 500;
+  line-height: 1;
+  font-synthesis: none;
+  color: var(--color-accent);
+  text-shadow:
+    0 0 28px oklch(0.88 0.16 72 / 0.45),
+    0 0 64px oklch(0.82 0.14 60 / 0.22);
+  animation: mood-thanks-breathe 3.2s var(--ease-glide) infinite;
+}
+
+@keyframes mood-thanks-breathe {
+  0%, 100% { opacity: 0.88; transform: scale(1);    }
+  50%      { opacity: 1;    transform: scale(1.05); }
+}
+
+.mood-thanks__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--fs-lg);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--color-text);
+}
+
+.mood-thanks__body {
+  margin: 0;
+  max-width: 28ch;
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+  color: var(--color-text-muted);
+}
+
+/* The "remember you matter" reminder — softer than the body, in the
+   warm accent cream so it reads as a personal note rather than a
+   second informational line. */
+.mood-thanks__reminder {
+  margin: var(--space-1) 0 0;
+  max-width: 24ch;
+  font-family: var(--font-display);
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  line-height: 1.4;
+  color: var(--color-accent);
+  opacity: 0.92;
+}
+
+/* Countdown to midnight shown on the "see you tomorrow" screen. */
+.mood-thanks__countdown-label {
+  margin-top: var(--space-3);
+  font-family: var(--font-display);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.36em;
+  text-transform: uppercase;
+  color: var(--color-text-faint);
+  /* Letter-spacing pushes the last glyph past its box; pad to recentre. */
+  padding-left: 0.36em;
+}
+
+.mood-thanks__countdown {
+  margin-top: var(--space-1);
+  font-family: var(--font-mono);
+  font-size: var(--fs-xl);
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  color: var(--color-text);
+  font-feature-settings: 'tnum';
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mood-thanks,
+  .mood-thanks__kanji {
+    animation: none;
+  }
+}
+
 /* --- Primary button -------------------------------------------------- */
 
 .primary-btn {
@@ -1954,9 +2298,43 @@ body {
   backdrop-filter: blur(40px) saturate(180%);
   -webkit-backdrop-filter: blur(40px) saturate(180%);
   border-top: 1px solid oklch(1 0 0 / 0.06);
+  /* Two-step transitions on radius so the corner adapts smoothly if
+     the viewport flips between mobile and desktop (e.g. rotation). */
+  transition:
+    border-bottom-left-radius var(--dur-normal) var(--ease-out),
+    border-bottom-right-radius var(--dur-normal) var(--ease-out);
+  /* Bottom corners hug the screen shape. Big enough that the curve
+     reads from across the room, not as a tiny radius. Mobile breakpoint
+     below kicks it up further to track the iPhone 15 Pro hardware
+     curve (~55 px). */
+  border-bottom-left-radius: 44px;
+  border-bottom-right-radius: 44px;
+  /* Clip the active-tab pill so it can't poke past the curved corner. */
+  overflow: hidden;
   box-shadow:
     inset 0 1px 0 var(--color-edge-hi),
     0 -10px 30px oklch(0 0 0 / 0.18);
+}
+
+/* Real-phone screen corners (~55 px on modern iPhones). Below 600 px
+   there's no desktop phone-frame, so the tab bar's bottom curve
+   has to do the matching itself. */
+@media (max-width: 599px) {
+  .tab-bar {
+    border-bottom-left-radius: 55px;
+    border-bottom-right-radius: 55px;
+  }
+}
+
+/* Desktop phone-frame: bump #root's bottom corners so the tab bar's
+   larger curve isn't clipped back to 32 px by the frame. The top
+   corners stay at --radius-xl so the device-shell silhouette still
+   reads correctly. */
+@media (min-width: 600px) {
+  #root {
+    border-bottom-left-radius: 44px;
+    border-bottom-right-radius: 44px;
+  }
 }
 
 .tab-bar__pill {
@@ -1971,13 +2349,29 @@ body {
   box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.07);
   transform: translateX(0);
   /* Smooth slide, no overshoot. Spring easing was reading as "tilt"
-     when the pill crossed the divider. */
-  transition: transform var(--dur-slow) var(--ease-out);
+     when the pill crossed the divider. Border-radius also animates
+     so the outer corner blooms into the screen curve as the pill
+     reaches its side. */
+  transition:
+    transform           var(--dur-slow) var(--ease-out),
+    border-radius       var(--dur-slow) var(--ease-out);
   pointer-events: none;
 }
 
 .tab-bar[data-active='stats'] .tab-bar__pill {
   transform: translateX(100%);
+}
+
+/* When Log is active the pill is in the bottom-left half — its
+   bottom-left corner blooms to match the screen's bottom-left curve. */
+.tab-bar[data-active='log'] .tab-bar__pill {
+  border-bottom-left-radius: 36px;
+}
+
+/* When Stats is active the pill is in the bottom-right half — its
+   bottom-right corner blooms to match the screen's bottom-right curve. */
+.tab-bar[data-active='stats'] .tab-bar__pill {
+  border-bottom-right-radius: 36px;
 }
 
 .tab-bar__btn {

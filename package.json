@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "typecheck": "tsc -b --noEmit"
+    "typecheck": "tsc -b --noEmit",
+    "shot": "node scripts/screenshot.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.46.1",
@@ -24,6 +25,7 @@
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
     "@vitejs/plugin-react": "^6.0.1",
+    "playwright": "^1.60.0",
     "supabase": "^2.98.2",
     "typescript": "^5.7.2",
     "vite": "^8.0.12"

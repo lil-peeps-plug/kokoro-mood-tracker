@@ -3,6 +3,7 @@ import { useI18n, type Locale } from '@/lib/i18n'
 import { useMoodEntries } from '@/hooks/useMoodEntries'
 import { computeStats, type Range } from '@/utils/stats'
 import HistoryList from '@/components/HistoryList'
+import MoodCalendar from '@/components/MoodCalendar'
 import MoodDistributionChart from '@/components/MoodDistributionChart'
 import MoodTrendChart from '@/components/MoodTrendChart'
 import RangeFilter from '@/components/RangeFilter'
@@ -107,6 +108,11 @@ export default function StatsView() {
             {loading ? t.loading : t.statsHistoryEmpty}
           </div>
         )}
+      </section>
+
+      <section className="stats-section" aria-label={t.statsCalendar}>
+        <h2 className="stats-section__title">{t.statsCalendar}</h2>
+        <MoodCalendar entries={entries} />
       </section>
 
       <section className="stats-section" aria-label={t.statsHistory}>

@@ -81,7 +81,9 @@ async function playChime() {
         release: 0.4,
       },
     }).connect(reverb)
-    toneSynth.volume.value = -26
+    // Dialled-down chime — barely there, just a wisp. Sits well below
+    // the YouTube music; only audible in quiet rooms / with headphones.
+    toneSynth.volume.value = -54
   }
   const note = CHIME_NOTES[Math.floor(Math.random() * CHIME_NOTES.length)]
   toneSynth.triggerAttackRelease(note ?? 'C6', '8n')
@@ -207,17 +209,19 @@ export default function SakuraCanvas() {
       const a = Math.max(0, s.life)
       ctx!.save()
       ctx!.globalAlpha = a
-      // Glow halo around the bright core — gives the "spark" feel.
+      // Pure-white spark — bright core + white glow halo + faint white
+      // outer ring. Three white layers at different alphas give depth
+      // without going pink.
       ctx!.shadowBlur = 12 * sizeRef.current.dpr
-      ctx!.shadowColor = '#ffd5e0'
+      ctx!.shadowColor = '#ffffff'
       ctx!.fillStyle = '#ffffff'
       ctx!.beginPath()
       ctx!.arc(s.x, s.y, s.size, 0, Math.PI * 2)
       ctx!.fill()
-      // Soft pink outer ring at half opacity for extra sparkle.
+      // Soft white outer ring at half opacity for extra sparkle.
       ctx!.shadowBlur = 0
-      ctx!.globalAlpha = a * 0.55
-      ctx!.fillStyle = '#ffc8d6'
+      ctx!.globalAlpha = a * 0.45
+      ctx!.fillStyle = '#ffffff'
       ctx!.beginPath()
       ctx!.arc(s.x, s.y, s.size * 1.8, 0, Math.PI * 2)
       ctx!.fill()

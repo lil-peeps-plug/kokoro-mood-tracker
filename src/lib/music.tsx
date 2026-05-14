@@ -169,6 +169,13 @@ export function MusicProvider({ children }: { children: ReactNode }) {
               // first-tap handler unmutes when the user interacts.
               player.unMute()
               player.playVideo()
+              // If the user already tapped somewhere before YT finished
+              // loading, that gesture already unlocked audio for this
+              // session — re-attempt the unmute now that the player is
+              // actually here.
+              if (wantsAudibleRef.current && enabled) {
+                player.unMute()
+              }
             } catch {
               /* swallow — some webviews are picky */
             }
@@ -193,15 +200,18 @@ export function MusicProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  // On the first real user gesture, unmute (if the user wants music)
-  // and make sure the track is actually playing. The video has already
-  // been auto-playing muted since YT became ready.
+  // First user gesture handler. Attached on mount (NOT waiting for
+  // YT to be ready), so any tap during the splash counts as the
+  // gesture browsers require for audible playback. If the player
+  // exists at click time we unmute right then; otherwise the flag
+  // is left and YT's onReady will pick it up the moment it fires.
+  const wantsAudibleRef = useRef(false)
   useEffect(() => {
-    if (!ready) return
     let done = false
     const onInteract = () => {
       if (done) return
       done = true
+      wantsAudibleRef.current = true
       const p = playerRef.current
       if (!p) return
       try {
@@ -212,28 +222,76 @@ export function MusicProvider({ children }: { children: ReactNode }) {
       } catch {
         /* swallow */
       }
-      document.removeEventListener('pointerdown', onInteract)
-      document.removeEventListener('keydown', onInteract)
     }
-    document.addEventListener('pointerdown', onInteract)
-    document.addEventListener('keydown', onInteract)
+    document.addEventListener('pointerdown', onInteract, { once: true })
+    document.addEventListener('keydown', onInteract, { once: true })
     return () => {
       document.removeEventListener('pointerdown', onInteract)
       document.removeEventListener('keydown', onInteract)
     }
-  }, [ready, enabled])
+  }, [enabled])
+
+  // Linear volume ramp over `duration` ms. Used to fade in/out the
+  // YouTube track so toggling music doesn't feel like a hard cut.
+  const fadeRafRef = useRef<number | null>(null)
+  const fadeVolume = useCallback(
+    (
+      from: number,
+      to: number,
+      duration: number,
+      onDone?: () => void,
+    ) => {
+      const p = playerRef.current
+      if (!p) {
+        onDone?.()
+        return
+      }
+      if (fadeRafRef.current !== null) {
+        cancelAnimationFrame(fadeRafRef.current)
+        fadeRafRef.current = null
+      }
+      const startTime = performance.now()
+      const step = () => {
+        const t = Math.min(1, (performance.now() - startTime) / duration)
+        const v = Math.round(from + (to - from) * t)
+        try {
+          p.setVolume(v)
+        } catch {
+          /* swallow */
+        }
+        if (t < 1) {
+          fadeRafRef.current = requestAnimationFrame(step)
+        } else {
+          fadeRafRef.current = null
+          onDone?.()
+        }
+      }
+      fadeRafRef.current = requestAnimationFrame(step)
+    },
+    [],
+  )
 
   const toggle = useCallback(() => {
     const p = playerRef.current
     if (!p) return
     if (playing) {
-      p.pauseVideo()
+      // Fade volume to 0, then pause. Restore the user's volume after
+      // pausing so the next play-on resumes at the same level.
       setEnabled(false)
       try {
         window.localStorage.setItem(STORAGE_KEY, 'off')
       } catch {
         /* localStorage blocked */
       }
+      const restoreTo = volume
+      fadeVolume(volume, 0, 900, () => {
+        try {
+          p.pauseVideo()
+          p.setVolume(restoreTo)
+        } catch {
+          /* swallow */
+        }
+      })
     } else {
       setEnabled(true)
       try {
@@ -242,13 +300,19 @@ export function MusicProvider({ children }: { children: ReactNode }) {
         /* localStorage blocked */
       }
       try {
+        // Zero the volume BEFORE unmuting so we never briefly play at
+        // the previous (potentially loud) level. Then unmute + play,
+        // then ramp up smoothly. Avoids the "disappears for a sec"
+        // blip where the first frame was audible before the silence.
+        p.setVolume(0)
         p.unMute()
         p.playVideo()
       } catch {
         /* swallow */
       }
+      fadeVolume(0, volume, 900)
     }
-  }, [playing])
+  }, [playing, volume, fadeVolume])
 
   const setVolume = useCallback((v: number) => {
     const clamped = Math.max(0, Math.min(100, Math.round(v)))

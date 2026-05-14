@@ -45,6 +45,12 @@ interface Strings {
   logSave: string
   logSaving: string
   logSaved: string
+  logThanksTitle: string
+  logThanksBody: string
+  logThanksReminder: string
+  logAlreadyTitle: string
+  logAlreadyBody: string
+  logCountdownLabel: string
 
   statsTitle: string
   statsSubtitle: string
@@ -61,6 +67,9 @@ interface Strings {
 
   statsTrend: string
   statsDistribution: string
+  statsCalendar: string
+  statsCalendarLow: string
+  statsCalendarHigh: string
   statsHistory: string
   statsHistoryEmpty: string
 
@@ -96,6 +105,11 @@ interface Strings {
   aboutDontShow: string
   aboutOk: string
 
+  legalLink: string
+  legalTitle: string
+  legalUpdated: string
+  legalDismiss: string
+
   errorBoundary: string
   errorRetry: string
 }
@@ -120,6 +134,12 @@ const en: Strings = {
   logSave: 'Save mood',
   logSaving: 'Saving…',
   logSaved: 'Saved ✓',
+  logThanksTitle: 'Thank you ♡',
+  logThanksBody: 'Your mood was saved.',
+  logThanksReminder: 'Remember, you matter ♡',
+  logAlreadyTitle: 'See you tomorrow ♡',
+  logAlreadyBody: "You've already shared today's mood.",
+  logCountdownLabel: 'New day in',
   statsTitle: 'Your story so far',
   statsSubtitle:
     'Averages, streaks, charts, and an option to export everything to PDF.',
@@ -133,6 +153,9 @@ const en: Strings = {
   statsTotal: 'Total',
   statsTrend: 'Mood over time',
   statsDistribution: 'Distribution',
+  statsCalendar: 'Calendar',
+  statsCalendarLow: 'Low',
+  statsCalendarHigh: 'High',
   statsHistory: 'History',
   statsHistoryEmpty: 'No entries for this range yet.',
   statsExportPdf: 'Export PDF',
@@ -163,6 +186,10 @@ const en: Strings = {
     'Kokoro 心 is a quiet mood diary, made with care by Egor for our small circle.\n\nHow it works: tap a number 1–5 to log how you feel, then add a short note if you’d like. Stats show your averages, streaks, and patterns over time — export everything as a PDF whenever you want a keepsake.\n\nMusic streamed via YouTube.',
   aboutDontShow: 'Don’t show this again',
   aboutOk: 'OK',
+  legalLink: 'Privacy & terms',
+  legalTitle: 'Privacy & terms',
+  legalUpdated: 'Last updated',
+  legalDismiss: 'Close',
   errorBoundary: 'Something quietly went wrong. The error is logged.',
   errorRetry: 'Try again',
 }
@@ -187,6 +214,12 @@ const ru: Strings = {
   logSave: 'Сохранить',
   logSaving: 'Сохраняю…',
   logSaved: 'Сохранено ✓',
+  logThanksTitle: 'Спасибо ♡',
+  logThanksBody: 'Настроение сохранено.',
+  logThanksReminder: 'Помни — ты важен ♡',
+  logAlreadyTitle: 'До завтра ♡',
+  logAlreadyBody: 'Ты уже отметил настроение сегодня.',
+  logCountdownLabel: 'Новый день через',
   statsTitle: 'Твоя история',
   statsSubtitle:
     'Средние, серии, графики и экспорт в PDF.',
@@ -201,6 +234,9 @@ const ru: Strings = {
   statsTotal: 'Всего',
   statsTrend: 'Настроение по дням',
   statsDistribution: 'Распределение',
+  statsCalendar: 'Календарь',
+  statsCalendarLow: 'Низко',
+  statsCalendarHigh: 'Высоко',
   statsHistory: 'История',
   statsHistoryEmpty: 'Пока нет записей за этот период.',
   statsExportPdf: 'Экспорт в PDF',
@@ -231,6 +267,10 @@ const ru: Strings = {
     'Kokoro 心 — тихий дневник настроения, созданный с заботой Егором для нашего маленького круга.\n\nКак это работает: выбери число от 1 до 5, чтобы отметить своё состояние, и оставь короткую заметку, если хочешь. Вкладка «Stats» покажет средние, серии и закономерности — экспортируй всё в PDF, когда захочется сохранить.\n\nМузыка воспроизводится через YouTube.',
   aboutDontShow: 'Больше не показывать',
   aboutOk: 'ОК',
+  legalLink: 'Конфиденциальность',
+  legalTitle: 'Конфиденциальность и условия',
+  legalUpdated: 'Обновлено',
+  legalDismiss: 'Закрыть',
   errorBoundary: 'Что-то пошло не так. Ошибка записана.',
   errorRetry: 'Попробовать снова',
 }
@@ -255,6 +295,12 @@ const ka: Strings = {
   logSave: 'შენახვა',
   logSaving: 'ვინახავ…',
   logSaved: 'შენახულია ✓',
+  logThanksTitle: 'გმადლობთ ♡',
+  logThanksBody: 'თქვენი განწყობა შენახულია.',
+  logThanksReminder: 'გახსოვდე, შენ მნიშვნელოვანი ხარ ♡',
+  logAlreadyTitle: 'ხვალამდე ♡',
+  logAlreadyBody: 'შენ უკვე გააზიარე დღევანდელი განწყობა.',
+  logCountdownLabel: 'ახალი დღე იწყება',
   statsTitle: 'შენი ისტორია',
   statsSubtitle: 'საშუალოები, სერიები, გრაფიკები და PDF ექსპორტი.',
   statsStub: 'გრაფიკები მომდევნო ფაზაში. PDF ექსპორტი მალე.',
@@ -267,6 +313,9 @@ const ka: Strings = {
   statsTotal: 'სულ',
   statsTrend: 'განწყობა დროში',
   statsDistribution: 'განაწილება',
+  statsCalendar: 'კალენდარი',
+  statsCalendarLow: 'დაბალი',
+  statsCalendarHigh: 'მაღალი',
   statsHistory: 'ისტორია',
   statsHistoryEmpty: 'ამ პერიოდისთვის ჯერ ჩანაწერი არ არის.',
   statsExportPdf: 'PDF ექსპორტი',
@@ -297,6 +346,10 @@ const ka: Strings = {
     'Kokoro 心 არის წყნარი განწყობის დღიური, შექმნილი მზრუნველობით ეგორის მიერ ჩვენი პატარა წრისთვის.\n\nროგორ მუშაობს: დააჭირე ციფრს 1-დან 5-მდე განწყობის ჩასაწერად და დაამატე მოკლე ჩანაწერი, თუ გინდა. სტატისტიკა აჩვენებს საშუალოს, სერიებს და ტენდენციებს — ექსპორტი PDF-ში ნებისმიერ დროს.\n\nმუსიკა YouTube-ის მეშვეობით.',
   aboutDontShow: 'აღარ მაჩვენო',
   aboutOk: 'ოკ',
+  legalLink: 'კონფიდენციალურობა',
+  legalTitle: 'კონფიდენციალურობა და პირობები',
+  legalUpdated: 'განახლდა',
+  legalDismiss: 'დახურვა',
   errorBoundary: 'რაღაც წყნარად შეფერხდა. შეცდომა აღრიცხულია.',
   errorRetry: 'სცადე ხელახლა',
 }
