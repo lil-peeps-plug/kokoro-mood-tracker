@@ -352,15 +352,15 @@ body.is-admin-route #root {
   display: flex;
   align-items: center;
   justify-content: center;
-  /* Top padding: whichever is larger — the system safe-area + a
-     comfort gap, OR an explicit 64 px floor. The floor guarantees
-     the KOKORO 心 wordmark clears the iPhone 15 Pro Dynamic Island
-     (which extends to ~48 px from the device top) even when env()
-     and the Telegram safeAreaInset both report 0. */
+  /* Top padding: just the Telegram safe-area + a small comfort gap.
+     We deliberately do NOT add a Dynamic-Island floor here — Telegram
+     renders its own header bar ("Close | Kokoro mini app | …") above
+     the Mini App webview, which already clears the notch / island.
+     Stacking another 64 px floor on top of that wastes vertical room. */
   padding:
-    max(calc(var(--safe-top) + var(--space-4)), var(--space-10))
+    calc(var(--safe-top) + var(--space-2))
     var(--space-5)
-    var(--space-4);
+    var(--space-3);
   /* Higher than .ticker (z:4) so the music/language popovers, which
      are descendants of .banner and visually overflow below it, paint
      over the running text instead of being eclipsed by it. */
@@ -411,18 +411,15 @@ body.is-admin-route #root {
 }
 
 /* --- Music control (top-left of banner) ----------------------------
-   Pushed well right of the screen edge so Telegram's long "Back/
-   Close" pill (which can carry text + chevron) has clear room
-   beside us. The maths:
-     space-4 (16 px)  → TG close-button left padding
-   + space-10 (64 px) → footprint of a text-pill TG close button
-   + space-3 (12 px)  → comfortable gap before our music button
-   = our music button's left edge (~ 92 px). */
+   Sits flush with the banner's left edge. Telegram's own "Close"
+   pill lives on the *device* row above the Mini App webview, not
+   inside the webview — so we don't need to dodge it like we did
+   when the mini app filled the full screen. */
 
 .music {
   position: absolute;
   top: calc(var(--safe-top) + var(--space-2));
-  left: calc(var(--space-4) + var(--space-10) + var(--space-3));
+  left: var(--space-3);
   z-index: 5;
 }
 

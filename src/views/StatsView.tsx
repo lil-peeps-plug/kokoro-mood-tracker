@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useI18n, type Locale } from '@/lib/i18n'
 import { useMoodEntries } from '@/hooks/useMoodEntries'
 import { computeStats, type Range } from '@/utils/stats'
@@ -22,10 +22,6 @@ function formatDays(n: number, locale: Locale): string {
   return n === 1 ? '1 day' : `${n} days`
 }
 
-function rangeLabelFor(t: ReturnType<typeof useI18n>['t'], r: Range): string {
-  return r === '7d' ? t.statsRange7d : r === '30d' ? t.statsRange30d : t.statsRangeAll
-}
-
 export default function StatsView() {
   const { t, locale } = useI18n()
   const [range, setRange] = useState<Range>('7d')
@@ -33,34 +29,8 @@ export default function StatsView() {
 
   const stats = useMemo(() => computeStats(entries), [entries])
 
-  const cardRef = useRef<HTMLElement>(null)
-  const [exporting, setExporting] = useState(false)
-  const [exportError, setExportError] = useState<string | null>(null)
-
-  async function onExport() {
-    if (!cardRef.current || exporting || entries.length === 0) return
-    setExporting(true)
-    setExportError(null)
-    try {
-      // Lazy import — keeps html2canvas + jsPDF (~250 KB) out of the
-      // initial bundle. They load only the first time the user hits Export.
-      const { exportMoodReport } = await import('@/utils/exportPdf')
-      await exportMoodReport({
-        element: cardRef.current,
-        reportLabel: t.statsReportLabel,
-        rangeLabel: rangeLabelFor(t, range),
-        footerLabel: t.statsFooterLine,
-      })
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err)
-      setExportError(msg)
-    } finally {
-      setExporting(false)
-    }
-  }
-
   return (
-    <section ref={cardRef} className="card" aria-label={t.statsTitle}>
+    <section className="card" aria-label={t.statsTitle}>
       <header className="card__head">
         <h1 className="card__title">{t.statsTitle}</h1>
         <p className="card__sub">{t.statsSubtitle}</p>
@@ -119,23 +89,6 @@ export default function StatsView() {
         <h2 className="stats-section__title">{t.statsHistory}</h2>
         <HistoryList entries={entries} />
       </section>
-
-      <div className="card__footer">
-        <button
-          type="button"
-          className="primary-btn"
-          disabled={entries.length === 0 || exporting}
-          onClick={onExport}
-          aria-busy={exporting}
-        >
-          {exporting ? t.statsExporting : t.statsExportPdf}
-        </button>
-        {exportError && (
-          <p className="card__error" role="alert">
-            {exportError}
-          </p>
-        )}
-      </div>
     </section>
   )
 }
