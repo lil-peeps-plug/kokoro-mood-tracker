@@ -29,21 +29,17 @@
 const BOT_SECRET = Deno.env.get("BOT_SECRET")
 const MINI_APP_URL = (Deno.env.get("MINI_APP_URL") ?? "").replace(/\/+$/, "")
 
-// Tri-lingual single message — every recipient sees their own
-// language somewhere in the first paragraph, so the welcome
-// works regardless of the user's Telegram interface language.
+// Ultra-minimal — title + a single greeting line in all three
+// languages separated by middle dots, plus one quiet hint line so
+// the user knows the buttons below are what opens the app. Detail
+// is left to the app itself; the bot's only job is to launch it.
+// HTML parse mode for the bold title (cheaper than MarkdownV2 here).
 const WELCOME_TEXT = [
-  "🌸 Welcome to Kokoro 心",
-  "🌸 Добро пожаловать в Kokoro 心",
-  "🌸 მოგესალმებით Kokoro 心-ში",
+  "🌸 <b>Kokoro 心</b>",
   "",
-  "A quiet mood diary for our small circle. Tap a number 1–5 three times a day to log how you feel, see your patterns in the Stats tab, and export everything as a PDF whenever you'd like.",
+  "Welcome · Добро пожаловать · მოგესალმებით",
   "",
-  "Тихий дневник настроения для нашего маленького круга. Отметь число от 1 до 5 трижды в день, посмотри свои закономерности во вкладке «Stats» и экспортируй всё в PDF, когда захочется.",
-  "",
-  "წყნარი განწყობის დღიური ჩვენი პატარა წრისთვის. დღეში სამჯერ აირჩიე ციფრი 1-დან 5-მდე, ნახე ტენდენციები Stats-ში, და ნებისმიერ დროს გადმოწერე ყველაფერი PDF-ად.",
-  "",
-  "Choose your language to begin / Выбери язык / აირჩიე ენა:",
+  "<i>Tap a button below to open the app</i>",
 ].join("\n")
 
 interface InlineKeyboardButton {
@@ -115,6 +111,7 @@ Deno.serve(async (req) => {
     const payload: SendMessagePayload = {
       chat_id: chatId,
       text: WELCOME_TEXT,
+      parse_mode: "HTML",
       reply_markup: { inline_keyboard: languageKeyboard() },
     }
     await tgApi("sendMessage", payload)
