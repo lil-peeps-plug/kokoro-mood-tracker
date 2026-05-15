@@ -356,11 +356,13 @@ body.is-admin-route #root {
      We deliberately do NOT add a Dynamic-Island floor here — Telegram
      renders its own header bar ("Close | Kokoro mini app | …") above
      the Mini App webview, which already clears the notch / island.
-     Stacking another 64 px floor on top of that wastes vertical room. */
+     Top and bottom kept equal so the KOKORO 心 wordmark sits at the
+     true vertical center of the banner once safe-top is 0 (which it
+     normally is inside the Telegram webview). */
   padding:
-    calc(var(--safe-top) + var(--space-2))
+    calc(var(--safe-top) + var(--space-4))
     var(--space-5)
-    var(--space-3);
+    var(--space-4);
   /* Higher than .ticker (z:4) so the music/language popovers, which
      are descendants of .banner and visually overflow below it, paint
      over the running text instead of being eclipsed by it. */
