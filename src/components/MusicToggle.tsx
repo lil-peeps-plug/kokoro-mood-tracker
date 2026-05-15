@@ -1,16 +1,18 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useMusic } from '@/lib/music'
 import { useI18n } from '@/lib/i18n'
 
 /**
  * Music note pill in the top-left of the banner. Tap to open a popover
- * with a play/pause toggle and a volume slider.
+ * with a play/pause toggle. The volume slider was removed — the
+ * default ambient level is intentionally quiet and the iOS Telegram
+ * WebView made the slider unreliable. On/off only for now.
  *
  * Visually mirrors the language picker on the right side of the banner.
  * Closes on outside-click and Escape.
  */
 export default function MusicToggle() {
-  const { playing, toggle, ready, volume, setVolume } = useMusic()
+  const { playing, toggle, ready } = useMusic()
   const { t } = useI18n()
   const [open, setOpen] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
@@ -95,16 +97,6 @@ export default function MusicToggle() {
           </span>
         </button>
 
-        <div className="music-menu__slider-row">
-          <span className="music-menu__slider-label">{t.musicVolume}</span>
-          <span className="music-menu__slider-value">{volume}%</span>
-          <VolumeSlider
-            value={volume}
-            onChange={setVolume}
-            label={t.musicVolume}
-          />
-        </div>
-
         <p className="music-menu__legal">
           <a
             className="music-menu__legal-link"
@@ -117,133 +109,6 @@ export default function MusicToggle() {
           <span className="music-menu__legal-body">{t.musicLegal}</span>
         </p>
       </div>
-    </div>
-  )
-}
-
-// Custom slider built on pointer events. The native <input type="range">
-// is unreliable inside iOS Telegram's WebView — the thumb is small,
-// touch hit-testing is finicky, and Telegram's swipe-down-to-close
-// gesture intercepts drags before they ever reach the input. A
-// div-based track with explicit pointer capture sidesteps every one
-// of those issues and behaves identically on mouse + touch + pen.
-interface VolumeSliderProps {
-  value: number
-  onChange: (next: number) => void
-  label: string
-}
-
-function VolumeSlider({ value, onChange, label }: VolumeSliderProps) {
-  const trackRef = useRef<HTMLDivElement>(null)
-  // Keep the latest onChange in a ref so the document-level listeners
-  // attached on drag-start always call the current closure even if
-  // React re-renders mid-drag.
-  const onChangeRef = useRef(onChange)
-  onChangeRef.current = onChange
-
-  const setFromClientX = useCallback((clientX: number) => {
-    const track = trackRef.current
-    if (!track) return
-    const rect = track.getBoundingClientRect()
-    if (rect.width <= 0) return
-    const ratio = (clientX - rect.left) / rect.width
-    const clamped = Math.min(1, Math.max(0, ratio))
-    onChangeRef.current(Math.round(clamped * 100))
-  }, [])
-
-  // Drag handling lives on the document, not the element. iOS Telegram
-  // WebView has been observed to silently drop setPointerCapture +
-  // subsequent pointermove events on the captured element; binding to
-  // the document instead sidesteps that whole class of bug.
-  const startDrag = useCallback(
-    (initialX: number) => {
-      setFromClientX(initialX)
-
-      function onPointerMove(ev: PointerEvent) {
-        setFromClientX(ev.clientX)
-      }
-      function onTouchMove(ev: TouchEvent) {
-        const t = ev.touches.item(0)
-        if (!t) return
-        ev.preventDefault() // stop the page scrolling while dragging
-        setFromClientX(t.clientX)
-      }
-      function onEnd() {
-        document.removeEventListener('pointermove', onPointerMove)
-        document.removeEventListener('pointerup', onEnd)
-        document.removeEventListener('pointercancel', onEnd)
-        document.removeEventListener('touchmove', onTouchMove)
-        document.removeEventListener('touchend', onEnd)
-        document.removeEventListener('touchcancel', onEnd)
-      }
-      document.addEventListener('pointermove', onPointerMove)
-      document.addEventListener('pointerup', onEnd)
-      document.addEventListener('pointercancel', onEnd)
-      document.addEventListener('touchmove', onTouchMove, { passive: false })
-      document.addEventListener('touchend', onEnd)
-      document.addEventListener('touchcancel', onEnd)
-    },
-    [setFromClientX],
-  )
-
-  function onPointerDown(e: React.PointerEvent<HTMLDivElement>) {
-    e.preventDefault()
-    startDrag(e.clientX)
-  }
-
-  // Belt-and-braces for iOS Safari/Telegram where the initial pointer
-  // sequence sometimes never fires. Touch events go first and are
-  // honoured by every iOS WebView ever shipped.
-  function onTouchStart(e: React.TouchEvent<HTMLDivElement>) {
-    const t = e.touches.item(0)
-    if (!t) return
-    startDrag(t.clientX)
-  }
-
-  function onKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
-    const step = e.shiftKey ? 10 : 5
-    if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') {
-      e.preventDefault()
-      onChange(Math.max(0, value - step))
-    } else if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
-      e.preventDefault()
-      onChange(Math.min(100, value + step))
-    } else if (e.key === 'Home') {
-      e.preventDefault()
-      onChange(0)
-    } else if (e.key === 'End') {
-      e.preventDefault()
-      onChange(100)
-    }
-  }
-
-  const pct = Math.max(0, Math.min(100, value))
-
-  return (
-    <div
-      ref={trackRef}
-      className="music-slider"
-      role="slider"
-      tabIndex={0}
-      aria-label={label}
-      aria-valuemin={0}
-      aria-valuemax={100}
-      aria-valuenow={pct}
-      onPointerDown={onPointerDown}
-      onTouchStart={onTouchStart}
-      onKeyDown={onKeyDown}
-    >
-      <div className="music-slider__track" aria-hidden="true" />
-      <div
-        className="music-slider__fill"
-        aria-hidden="true"
-        style={{ width: `${pct}%` }}
-      />
-      <div
-        className="music-slider__thumb"
-        aria-hidden="true"
-        style={{ left: `${pct}%` }}
-      />
     </div>
   )
 }

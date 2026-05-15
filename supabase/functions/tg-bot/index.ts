@@ -42,18 +42,26 @@ const WELCOME_TEXT = [
   "<i>Tap a button below to open the app</i>",
 ].join("\n")
 
-interface InlineKeyboardButton {
+interface KeyboardButton {
   text: string
   web_app?: { url: string }
+}
+
+interface ReplyKeyboardMarkup {
+  keyboard: KeyboardButton[][]
+  /** Stays visible until explicitly removed. Needs a recent client. */
+  is_persistent?: boolean
+  /** Shrinks keys to fit content (vs. taking the full keyboard area). */
+  resize_keyboard?: boolean
+  /** Subtle hint shown in the message field placeholder. */
+  input_field_placeholder?: string
 }
 
 interface SendMessagePayload {
   chat_id: number
   text: string
   parse_mode?: "MarkdownV2" | "HTML"
-  reply_markup?: {
-    inline_keyboard: InlineKeyboardButton[][]
-  }
+  reply_markup?: ReplyKeyboardMarkup
 }
 
 async function tgApi(method: string, payload: unknown): Promise<void> {
@@ -72,14 +80,22 @@ async function tgApi(method: string, payload: unknown): Promise<void> {
   }
 }
 
-function languageKeyboard(): InlineKeyboardButton[][] {
-  // Stacked vertically — three short buttons read better on phones
-  // than three cramped horizontal cells with non-Latin scripts.
-  return [
-    [{ text: "🇬🇧 English",  web_app: { url: `${MINI_APP_URL}/?lang=en` } }],
-    [{ text: "🇷🇺 Русский",  web_app: { url: `${MINI_APP_URL}/?lang=ru` } }],
-    [{ text: "🇬🇪 ქართული",  web_app: { url: `${MINI_APP_URL}/?lang=ka` } }],
-  ]
+function languageReplyKeyboard(): ReplyKeyboardMarkup {
+  // Reply keyboard (persistent buttons at the bottom of the chat),
+  // not inline keyboard — these stay visible after the welcome
+  // message scrolls away, so the user can always tap one to open
+  // the Mini App in the chosen language without scrolling back.
+  // Stacked vertically because the non-Latin scripts read better
+  // with their own row than crammed three-across.
+  return {
+    keyboard: [
+      [{ text: "🇬🇧 English",  web_app: { url: `${MINI_APP_URL}/?lang=en` } }],
+      [{ text: "🇷🇺 Русский",  web_app: { url: `${MINI_APP_URL}/?lang=ru` } }],
+      [{ text: "🇬🇪 ქართული",  web_app: { url: `${MINI_APP_URL}/?lang=ka` } }],
+    ],
+    is_persistent: true,
+    resize_keyboard: true,
+  }
 }
 
 Deno.serve(async (req) => {
@@ -112,7 +128,7 @@ Deno.serve(async (req) => {
       chat_id: chatId,
       text: WELCOME_TEXT,
       parse_mode: "HTML",
-      reply_markup: { inline_keyboard: languageKeyboard() },
+      reply_markup: languageReplyKeyboard(),
     }
     await tgApi("sendMessage", payload)
   }
