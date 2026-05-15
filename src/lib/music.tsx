@@ -160,22 +160,17 @@ export function MusicProvider({ children }: { children: ReactNode }) {
             if (cancelled) return
             playerRef.current = player
             try {
-              player.setVolume(volume)
-              // Try to be audible from the very start — Telegram WebView
-              // usually allows this because launching the Mini App counts
-              // as a user gesture. If a stricter browser blocks unmuted
-              // playback, the autoplay fallback below (mute: 1 in
-              // playerVars) keeps the video spinning silently, and the
-              // first-tap handler unmutes when the user interacts.
+              // Zero the volume BEFORE unmuting so we don't blip at
+              // YT's default (often 100) for a frame. Then unmute +
+              // play silently, then ramp up to our target volume.
+              // Same pattern as the toggle path uses for switching on.
+              player.setVolume(0)
               player.unMute()
               player.playVideo()
-              // If the user already tapped somewhere before YT finished
-              // loading, that gesture already unlocked audio for this
-              // session — re-attempt the unmute now that the player is
-              // actually here.
               if (wantsAudibleRef.current && enabled) {
                 player.unMute()
               }
+              fadeVolume(0, volume, 900)
             } catch {
               /* swallow — some webviews are picky */
             }

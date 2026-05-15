@@ -799,12 +799,18 @@ body.is-admin-route #root {
 /* --- Sound visualizer (above the tab bar) ---------------------------- */
 
 .visualizer {
-  position: absolute;
+  /* Fixed-pin to the viewport so it stays anchored just above the
+     fixed tab-bar regardless of how the flex chain resolves. Same
+     defence as the tab-bar's own fix. */
+  position: fixed;
   left: 0;
   right: 0;
   bottom: calc(var(--tab-bar-height) + var(--safe-bottom));
   height: var(--vis-height);
-  z-index: 4;
+  /* Above the tab-bar (z:5) so any pixel-rounding overlap doesn't
+     eclipse the bars. They sit in their own band; this just keeps
+     paint order honest. */
+  z-index: 6;
   pointer-events: none;
   /* The container is a fixed slot — always visible at 0.55. The
      canvas inside is what fades: bars draw + decay over time, and
