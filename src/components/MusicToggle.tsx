@@ -163,9 +163,10 @@ function VolumeSlider({ value, onChange, label }: VolumeSliderProps) {
         setFromClientX(ev.clientX)
       }
       function onTouchMove(ev: TouchEvent) {
-        if (ev.touches.length === 0) return
+        const t = ev.touches.item(0)
+        if (!t) return
         ev.preventDefault() // stop the page scrolling while dragging
-        setFromClientX(ev.touches[0].clientX)
+        setFromClientX(t.clientX)
       }
       function onEnd() {
         document.removeEventListener('pointermove', onPointerMove)
@@ -194,8 +195,9 @@ function VolumeSlider({ value, onChange, label }: VolumeSliderProps) {
   // sequence sometimes never fires. Touch events go first and are
   // honoured by every iOS WebView ever shipped.
   function onTouchStart(e: React.TouchEvent<HTMLDivElement>) {
-    if (e.touches.length === 0) return
-    startDrag(e.touches[0].clientX)
+    const t = e.touches.item(0)
+    if (!t) return
+    startDrag(t.clientX)
   }
 
   function onKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
