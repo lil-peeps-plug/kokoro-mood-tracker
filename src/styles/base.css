@@ -352,17 +352,14 @@ body.is-admin-route #root {
   display: flex;
   align-items: center;
   justify-content: center;
-  /* Top padding: just the Telegram safe-area + a small comfort gap.
-     We deliberately do NOT add a Dynamic-Island floor here — Telegram
-     renders its own header bar ("Close | Kokoro mini app | …") above
-     the Mini App webview, which already clears the notch / island.
-     Top and bottom kept equal so the KOKORO 心 wordmark sits at the
-     true vertical center of the banner once safe-top is 0 (which it
-     normally is inside the Telegram webview). */
+  /* Compact top bar — Telegram renders its own header above us so
+     we don't need a Dynamic-Island floor here. Top and bottom kept
+     equal so the KOKORO 心 wordmark sits at the true vertical
+     center of the (compact) banner. */
   padding:
-    calc(var(--safe-top) + var(--space-4))
+    calc(var(--safe-top) + var(--space-2))
     var(--space-5)
-    var(--space-4);
+    var(--space-2);
   /* Higher than .ticker (z:4) so the music/language popovers, which
      are descendants of .banner and visually overflow below it, paint
      over the running text instead of being eclipsed by it. */
@@ -988,6 +985,11 @@ body.is-admin-route #root {
   gap: var(--space-5);
   padding: var(--space-6) var(--space-5) var(--space-5);
   background: var(--color-card);
+  /* Glass treatment — bg.webp blurs behind the card so the dreamy
+     night scene reads through everywhere, not just at the bottom
+     edge where the card stops. Matches the topbar's blur/saturate. */
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
   border: 1px solid var(--color-card-edge);
   border-radius: var(--radius-lg);
   overflow: hidden;

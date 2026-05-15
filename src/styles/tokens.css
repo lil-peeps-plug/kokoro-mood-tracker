@@ -27,7 +27,7 @@
 
   /* Surfaces — slight rose undertone, warmer than before */
   --color-bg-base:        oklch(0.11 0.022 320);
-  --color-card:           oklch(0.135 0.022 320);          /* opaque card */
+  --color-card:           oklch(0.135 0.022 320 / 0.62);    /* translucent card — bg.webp shows through via backdrop-filter */
   --color-card-edge:      oklch(0.34 0.04 320 / 0.42);
   --color-surface:        oklch(0.17 0.03 320 / 0.86);     /* glass overlays */
   --color-surface-elev:   oklch(0.21 0.035 320 / 0.93);
