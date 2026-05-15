@@ -1,3 +1,4 @@
+import WebApp from '@twa-dev/sdk'
 import { useI18n } from '@/lib/i18n'
 
 // ============================================================
@@ -25,6 +26,7 @@ interface Props {
 
 export default function ErrorScreen({ message, onRetry }: Props) {
   const { t } = useI18n()
+  const diag = collectTelegramDiagnostics()
   return (
     <div className="error-stack" role="alert" aria-live="polite">
       <div className="error-brand">
@@ -34,6 +36,23 @@ export default function ErrorScreen({ message, onRetry }: Props) {
         </span>
       </div>
       <p className="error-stack__message">{message ?? t.errorBoundary}</p>
+      <pre
+        style={{
+          textAlign: 'left',
+          fontSize: '11px',
+          lineHeight: 1.4,
+          maxWidth: '320px',
+          margin: '16px auto 0',
+          padding: '12px',
+          background: 'rgba(0,0,0,0.35)',
+          borderRadius: '8px',
+          whiteSpace: 'pre-wrap',
+          wordBreak: 'break-all',
+          color: 'rgba(255,255,255,0.85)',
+        }}
+      >
+        {diag}
+      </pre>
       {onRetry && (
         <button
           type="button"
@@ -45,4 +64,34 @@ export default function ErrorScreen({ message, onRetry }: Props) {
       )}
     </div>
   )
+}
+
+function collectTelegramDiagnostics(): string {
+  try {
+    const w = WebApp as unknown as {
+      initData?: string
+      version?: string
+      platform?: string
+      initDataUnsafe?: { user?: { id?: number; username?: string } }
+    }
+    const initData = w.initData ?? ''
+    const user = w.initDataUnsafe?.user
+    const tgGlobal =
+      typeof window !== 'undefined' && (window as { Telegram?: unknown }).Telegram
+        ? 'yes'
+        : 'no'
+    return [
+      `href: ${typeof window !== 'undefined' ? window.location.href : 'n/a'}`,
+      `window.Telegram: ${tgGlobal}`,
+      `platform: ${w.platform ?? '(none)'}`,
+      `version: ${w.version ?? '(none)'}`,
+      `initData.length: ${initData.length}`,
+      `initData[0..60]: ${initData.slice(0, 60)}`,
+      `user.id: ${user?.id ?? '(none)'}`,
+      `user.username: ${user?.username ?? '(none)'}`,
+      `ua: ${typeof navigator !== 'undefined' ? navigator.userAgent.slice(0, 120) : 'n/a'}`,
+    ].join('\n')
+  } catch (e) {
+    return `diag failed: ${e instanceof Error ? e.message : String(e)}`
+  }
 }
