@@ -985,11 +985,6 @@ body.is-admin-route #root {
   gap: var(--space-5);
   padding: var(--space-6) var(--space-5) var(--space-5);
   background: var(--color-card);
-  /* Glass treatment — bg.webp blurs behind the card so the dreamy
-     night scene reads through everywhere, not just at the bottom
-     edge where the card stops. Matches the topbar's blur/saturate. */
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
   border: 1px solid var(--color-card-edge);
   border-radius: var(--radius-lg);
   overflow: hidden;
