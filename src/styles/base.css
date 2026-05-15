@@ -103,6 +103,18 @@ body {
   overflow: hidden;
 }
 
+/* Mobile: drop the flex centering. It's only there for the desktop
+   phone-frame (≥600 px). On mobile, body == viewport and #root must
+   fill it exactly — any centering creates a mismatch between body's
+   100% height and #root's --tg-viewport-h height, which clipped the
+   tab bar in iOS Telegram. */
+@media (max-width: 599px) {
+  body {
+    display: block;
+    height: var(--tg-viewport-h);
+  }
+}
+
 #root {
   position: relative;
   width: 100%;
