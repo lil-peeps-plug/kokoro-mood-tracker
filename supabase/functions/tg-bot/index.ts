@@ -29,17 +29,20 @@
 const BOT_SECRET = Deno.env.get("BOT_SECRET")
 const MINI_APP_URL = (Deno.env.get("MINI_APP_URL") ?? "").replace(/\/+$/, "")
 
-// Title + one-line "what is this" so first-time openers know it's a
-// mood tracker, then the tri-lingual greeting, then a quiet hint
-// line pointing at the buttons. HTML parse mode for the bold title
-// (cheaper than MarkdownV2 here).
+// Polished tri-lingual welcome. Uses Telegram's HTML parse mode for
+// visual hierarchy: bold title, blockquote tagline (renders with a
+// left bar in modern clients), italic hint. Order top-to-bottom:
+//   header  →  what it is  →  greeting in 3 langs  →  call to action.
 const WELCOME_TEXT = [
-  "🌸 <b>Kokoro 心</b>",
-  "A quiet mood tracker for our small circle.",
+  "🌸  <b>Kokoro 心</b>",
   "",
-  "Welcome · Добро пожаловать · მოგესალმებით",
+  "<blockquote><i>A quiet mood tracker for our small circle.</i></blockquote>",
   "",
-  "<i>Tap a button below to open the app</i>",
+  "🇬🇧  Welcome",
+  "🇷🇺  Добро пожаловать",
+  "🇬🇪  მოგესალმებით",
+  "",
+  "<i>Tap your language below to open the app ↓</i>",
 ].join("\n")
 
 interface KeyboardButton {
