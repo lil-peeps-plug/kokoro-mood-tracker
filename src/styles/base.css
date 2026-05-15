@@ -565,13 +565,78 @@ body.is-admin-route #root {
 }
 
 .music-menu__toggle-icon {
+  /* Stack two glyphs (play + pause) in the same cell and cross-fade
+     between them when the toggle flips. Background ring gives the
+     play state a clear "on" affordance without flashing color. */
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 22px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: oklch(1 0 0 / 0.05);
   font-size: var(--fs-xs);
   color: var(--color-accent);
   letter-spacing: 0.04em;
+  flex: 0 0 auto;
+  transition:
+    background var(--dur-normal) var(--ease-out),
+    transform var(--dur-normal) var(--ease-out);
+}
+
+.music-menu__toggle.is-playing .music-menu__toggle-icon {
+  background: oklch(0.88 0.05 75 / 0.18);
+  transform: scale(1.04);
+}
+
+.music-menu__toggle-icon-glyph {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transform: scale(0.6) rotate(-15deg);
+  transition:
+    opacity var(--dur-normal) var(--ease-out),
+    transform var(--dur-normal) var(--ease-out);
+}
+
+.music-menu__toggle-icon[data-state='play'] .music-menu__toggle-icon-glyph--play,
+.music-menu__toggle-icon[data-state='pause'] .music-menu__toggle-icon-glyph--pause {
+  opacity: 1;
+  transform: scale(1) rotate(0);
+}
+
+.music-menu__toggle-icon-glyph--play {
+  /* Optical centring — the play triangle's mass sits left of its bbox. */
+  padding-left: 2px;
+}
+
+/* Label cross-fade on play/pause toggle — the keyed span remounts and
+   plays a quick fade-up so the verb change reads as a deliberate state
+   shift, not a jump-cut. */
+.music-menu__toggle-label {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.4em;
+}
+
+.music-menu__toggle-label-text {
+  animation: music-toggle-label-in var(--dur-normal) var(--ease-out) both;
+}
+
+@keyframes music-toggle-label-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Two-row layout: label + percentage on the top row, slider beneath.
@@ -611,62 +676,75 @@ body.is-admin-route #root {
   letter-spacing: 0.02em;
 }
 
-/* Slider sits below the label/value row, spanning both columns. */
-.music-menu__slider {
+/* Custom slider — replaces <input type="range"> because iOS Telegram
+   WebView is unreliable with native range inputs. A div-based track
+   with pointer events behaves identically across mouse + touch + pen
+   and isn't intercepted by Telegram's swipe-to-close handler. */
+.music-slider {
   grid-column: 1 / -1;
   grid-row: 2;
+  position: relative;
   width: 100%;
-  height: 18px;
+  height: 30px;            /* fat tap area; visible track sits mid-height */
   margin: 0;
-  background: transparent;
-  appearance: none;
-  -webkit-appearance: none;
   cursor: pointer;
-  /* Tell the browser this control wants horizontal drags. Without this,
-     iOS Telegram routes the gesture to its swipe-to-close handler and
-     the slider never receives the touchmove. Belt-and-braces with
-     WebApp.disableVerticalSwipes() called from telegram.ts on init. */
   touch-action: pan-x;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.music-menu__slider::-webkit-slider-runnable-track {
-  height: 3px;
-  background: oklch(1 0 0 / 0.10);
-  border-radius: 999px;
-}
-.music-menu__slider::-moz-range-track {
-  height: 3px;
-  background: oklch(1 0 0 / 0.10);
-  border-radius: 999px;
-}
-
-.music-menu__slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 14px;
-  height: 14px;
-  margin-top: -5.5px;
-  border-radius: 50%;
-  background: var(--color-accent);
-  border: none;
-  box-shadow: 0 2px 6px oklch(0 0 0 / 0.35);
-  transition: transform var(--dur-fast) var(--ease-out);
-}
-.music-menu__slider::-moz-range-thumb {
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: var(--color-accent);
-  border: none;
-  box-shadow: 0 2px 6px oklch(0 0 0 / 0.35);
-}
-
-.music-menu__slider:hover::-webkit-slider-thumb {
-  transform: scale(1.12);
-}
-.music-menu__slider:focus-visible {
+.music-slider:focus-visible {
   outline: none;
 }
-.music-menu__slider:focus-visible::-webkit-slider-thumb {
+
+.music-slider__track,
+.music-slider__fill {
+  position: absolute;
+  top: 50%;
+  height: 3px;
+  border-radius: 999px;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.music-slider__track {
+  left: 0;
+  right: 0;
+  background: oklch(1 0 0 / 0.10);
+}
+
+.music-slider__fill {
+  left: 0;
+  background: var(--color-accent);
+  opacity: 0.85;
+  /* Cheap visual smoothing — keyboard arrow jumps look like the thumb
+     glides instead of teleporting. During pointer drag the value
+     updates every move event anyway, so the transition is imperceptible. */
+  transition: width var(--dur-fast) var(--ease-out);
+}
+
+.music-slider__thumb {
+  position: absolute;
+  top: 50%;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  box-shadow: 0 2px 6px oklch(0 0 0 / 0.35);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  transition:
+    left var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out);
+}
+
+.music-slider:hover .music-slider__thumb {
+  transform: translate(-50%, -50%) scale(1.12);
+}
+
+.music-slider:focus-visible .music-slider__thumb {
   box-shadow:
     0 2px 6px oklch(0 0 0 / 0.35),
     0 0 0 3px oklch(0.88 0.05 75 / 0.32);
