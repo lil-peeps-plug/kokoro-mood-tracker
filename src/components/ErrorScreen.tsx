@@ -68,28 +68,42 @@ export default function ErrorScreen({ message, onRetry }: Props) {
 
 function collectTelegramDiagnostics(): string {
   try {
-    const w = WebApp as unknown as {
+    const sdk = WebApp as unknown as {
       initData?: string
       version?: string
       platform?: string
       initDataUnsafe?: { user?: { id?: number; username?: string } }
     }
-    const initData = w.initData ?? ''
-    const user = w.initDataUnsafe?.user
-    const tgGlobal =
-      typeof window !== 'undefined' && (window as { Telegram?: unknown }).Telegram
-        ? 'yes'
-        : 'no'
+    const native = (
+      typeof window !== 'undefined'
+        ? (window as { Telegram?: { WebApp?: typeof sdk } }).Telegram?.WebApp
+        : undefined
+    ) as typeof sdk | undefined
+
+    const hash = typeof window !== 'undefined' ? window.location.hash : ''
+    const hashParams = new URLSearchParams(hash.replace(/^#/, ''))
+    const tgWebAppDataRaw = hashParams.get('tgWebAppData')
+
+    const sdkInitData = sdk.initData ?? ''
+    const nativeInitData = native?.initData ?? ''
+
     return [
-      `href: ${typeof window !== 'undefined' ? window.location.href : 'n/a'}`,
-      `window.Telegram: ${tgGlobal}`,
-      `platform: ${w.platform ?? '(none)'}`,
-      `version: ${w.version ?? '(none)'}`,
-      `initData.length: ${initData.length}`,
-      `initData[0..60]: ${initData.slice(0, 60)}`,
-      `user.id: ${user?.id ?? '(none)'}`,
-      `user.username: ${user?.username ?? '(none)'}`,
-      `ua: ${typeof navigator !== 'undefined' ? navigator.userAgent.slice(0, 120) : 'n/a'}`,
+      `href: ${typeof window !== 'undefined' ? window.location.href.slice(0, 80) : 'n/a'}`,
+      `hash.tgWebAppData.len: ${tgWebAppDataRaw?.length ?? 0}`,
+      `hash.tgWebAppPlatform: ${hashParams.get('tgWebAppPlatform') ?? '(none)'}`,
+      `hash.tgWebAppVersion: ${hashParams.get('tgWebAppVersion') ?? '(none)'}`,
+      `--- SDK (@twa-dev/sdk) ---`,
+      `sdk.platform: ${sdk.platform ?? '(none)'}`,
+      `sdk.version: ${sdk.version ?? '(none)'}`,
+      `sdk.initData.len: ${sdkInitData.length}`,
+      `sdk.user.id: ${sdk.initDataUnsafe?.user?.id ?? '(none)'}`,
+      `--- native (window.Telegram.WebApp) ---`,
+      `native present: ${native ? 'yes' : 'no'}`,
+      `native.platform: ${native?.platform ?? '(none)'}`,
+      `native.version: ${native?.version ?? '(none)'}`,
+      `native.initData.len: ${nativeInitData.length}`,
+      `native.user.id: ${native?.initDataUnsafe?.user?.id ?? '(none)'}`,
+      `ua: ${typeof navigator !== 'undefined' ? navigator.userAgent.slice(0, 90) : 'n/a'}`,
     ].join('\n')
   } catch (e) {
     return `diag failed: ${e instanceof Error ? e.message : String(e)}`
