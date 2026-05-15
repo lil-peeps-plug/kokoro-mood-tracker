@@ -1,14 +1,36 @@
-import WebApp from '@twa-dev/sdk'
-
-// Thin wrapper around the Telegram WebApp SDK.
-// The SDK is "safe" outside Telegram — it returns empty strings and
-// no-op methods — so we don't need try/catch around basic access.
+// Thin wrapper around window.Telegram.WebApp (the global injected by
+// https://telegram.org/js/telegram-web-app.js — see index.html).
+//
+// We used to import `WebApp` from `@twa-dev/sdk`, but that wrapper
+// snapshotted the global at module-load time and ended up holding an
+// empty stub on iOS Telegram — `initData` was always "" even when the
+// real `window.Telegram.WebApp.initData` had a valid 500+ char payload.
+// Reading the live global on every call is the simplest fix and avoids
+// any timing race with the Telegram script.
 
 export interface TelegramUser {
   id: number
   first_name?: string
   last_name?: string
   username?: string
+}
+
+// Minimal shape of the parts of the SDK we actually touch. The real
+// object has many more methods; we deliberately keep this small so
+// nothing depends on the upstream type drift.
+interface TelegramWebApp {
+  initData?: string
+  initDataUnsafe?: { user?: TelegramUser }
+  platform?: string
+  version?: string
+  ready?: () => void
+  expand?: () => void
+}
+
+function getWebApp(): TelegramWebApp | null {
+  if (typeof window === 'undefined') return null
+  const tg = (window as { Telegram?: { WebApp?: TelegramWebApp } }).Telegram
+  return tg?.WebApp ?? null
 }
 
 let didReady = false
@@ -19,9 +41,10 @@ let didReady = false
  */
 export function initTelegram(): void {
   if (didReady) return
+  const w = getWebApp()
   try {
-    WebApp.ready()
-    WebApp.expand()
+    w?.ready?.()
+    w?.expand?.()
   } catch {
     // Outside Telegram or stubbed environment — nothing to do.
   }
@@ -34,7 +57,8 @@ export function initTelegram(): void {
  */
 export function isInTelegram(): boolean {
   initTelegram()
-  return typeof WebApp.initData === 'string' && WebApp.initData.length > 0
+  const data = getWebApp()?.initData
+  return typeof data === 'string' && data.length > 0
 }
 
 /**
@@ -44,7 +68,8 @@ export function isInTelegram(): boolean {
  */
 export function getInitData(): string | null {
   initTelegram()
-  return WebApp.initData || null
+  const data = getWebApp()?.initData
+  return data && data.length > 0 ? data : null
 }
 
 /**
@@ -54,7 +79,7 @@ export function getInitData(): string | null {
  */
 export function getTelegramUser(): TelegramUser | null {
   initTelegram()
-  const u = WebApp.initDataUnsafe?.user
+  const u = getWebApp()?.initDataUnsafe?.user
   if (!u) return null
   return {
     id: u.id,
