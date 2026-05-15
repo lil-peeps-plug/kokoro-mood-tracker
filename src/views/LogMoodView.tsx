@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useI18n } from '@/lib/i18n'
 import { MOOD_UPDATED_EVENT } from '@/hooks/useMoodEntries'
@@ -104,11 +104,23 @@ function formatCountdown(ms: number): string {
   return [h, m, s].map((n) => n.toString().padStart(2, '0')).join(':')
 }
 
+// Duration of the banner→countdown morph animation. Kept in sync with
+// the @keyframes step on .mood-thanks-card[data-arrival="from-banner"]
+// in base.css. If you tweak one, tweak the other.
+const ARRIVAL_ANIM_MS = 1100
+
 export default function LogMoodView() {
   const { t } = useI18n()
   const today = localDateString()
   // null while initial fetch is in flight; Map afterwards (possibly empty).
   const [entries, setEntries] = useState<Map<Slot, SlotEntry> | null>(null)
+  // True only on the *first* render after the initial fetch found every
+  // slot already filled — drives the one-shot "banner logo flies down
+  // into the countdown card" animation. We never re-trigger it within
+  // the same session, even if the user toggles tabs or saves and the
+  // countdown re-renders.
+  const [arrivingFromBanner, setArrivingFromBanner] = useState(false)
+  const didArrivalAnimRef = useRef(false)
   const [activeSlot, setActiveSlot] = useState<Slot | null>(null)
   const [score, setScore] = useState<Score | null>(null)
   const [note, setNote] = useState('')
@@ -147,6 +159,16 @@ export default function LogMoodView() {
           map.set(row.slot, row)
         }
         setEntries(map)
+        // First-load-all-filled? Kick off the one-shot banner-to-card
+        // morph animation. didArrivalAnimRef gates it so the animation
+        // never replays within the same session.
+        if (
+          !didArrivalAnimRef.current &&
+          SLOTS.every((s) => map.has(s))
+        ) {
+          didArrivalAnimRef.current = true
+          setArrivingFromBanner(true)
+        }
         // Auto-open the slot for the current time of day, unless it's
         // already filled or every slot is done.
         const cur = currentSlot()
@@ -163,6 +185,23 @@ export default function LogMoodView() {
   }, [today])
 
   const allFilled = entries !== null && SLOTS.every((s) => entries.has(s))
+
+  // When the arrival animation is active, the body wears
+  // `kokoro-arriving-from-banner` so the banner's KOKORO + 心 fade out
+  // and the countdown kanji animates up from the banner's vertical
+  // band. Removed after the animation completes.
+  useEffect(() => {
+    if (!arrivingFromBanner) return
+    document.body.classList.add('kokoro-arriving-from-banner')
+    const id = window.setTimeout(() => {
+      setArrivingFromBanner(false)
+      document.body.classList.remove('kokoro-arriving-from-banner')
+    }, ARRIVAL_ANIM_MS)
+    return () => {
+      window.clearTimeout(id)
+      document.body.classList.remove('kokoro-arriving-from-banner')
+    }
+  }, [arrivingFromBanner])
 
   // Midnight countdown when all 3 slots are filled.
   useEffect(() => {
@@ -269,6 +308,7 @@ export default function LogMoodView() {
       <section
         key="log-thanks"
         className="card mood-thanks-card"
+        data-arrival={arrivingFromBanner ? 'from-banner' : undefined}
         aria-label={t.logTitle}
       >
         <div className="mood-thanks" role="status" aria-live="polite">

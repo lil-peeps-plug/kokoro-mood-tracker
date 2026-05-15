@@ -2767,6 +2767,88 @@ body.is-admin-route #root {
   50%      { opacity: 1;    transform: scale(1.05); }
 }
 
+/* --- Arrival animation: banner logo morphs into countdown logo -----
+   When the user re-enters the app with every slot already filled,
+   the countdown view becomes the first thing they see. To soften
+   that abrupt arrival, the banner's KOKORO 心 fades out while the
+   big countdown kanji flies UP from the banner's vertical band and
+   settles into its final spot. The other countdown text (title,
+   body, timer) then fades in beneath it. Triggered by JS adding
+   data-arrival="from-banner" on the card + a body class on <body>;
+   both are removed after ~1.1 s so the breathe animation can take
+   over and replays don't happen on re-render. */
+
+.mood-thanks-card[data-arrival='from-banner'] .mood-thanks {
+  /* Override the normal mount fade so the kanji can run its own
+     translate without fighting the parent's translateY(8px). */
+  animation: none;
+}
+
+.mood-thanks-card[data-arrival='from-banner'] .mood-thanks__kanji {
+  /* Two-step animation: first the fly-down, then the breathe.
+     Breathe is delayed by the full arrival duration so the two
+     never overlap. */
+  animation:
+    kanji-fly-from-banner 1100ms var(--ease-out) both,
+    mood-thanks-breathe 3.2s var(--ease-glide) 1100ms infinite;
+}
+
+@keyframes kanji-fly-from-banner {
+  0% {
+    opacity: 0;
+    /* Banner kanji sits roughly 150 px above where the countdown
+       kanji ends up on a typical phone viewport. Starting scale is
+       ~0.34 — close to the visual size of the banner's 心. */
+    transform: translateY(-150px) scale(0.34);
+    text-shadow: 0 0 0 transparent;
+  }
+  60% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    text-shadow:
+      0 0 28px oklch(0.88 0.16 72 / 0.45),
+      0 0 64px oklch(0.82 0.14 60 / 0.22);
+  }
+}
+
+.mood-thanks-card[data-arrival='from-banner'] .mood-thanks__title,
+.mood-thanks-card[data-arrival='from-banner'] .mood-thanks__body,
+.mood-thanks-card[data-arrival='from-banner'] .mood-thanks__countdown-label,
+.mood-thanks-card[data-arrival='from-banner'] .mood-thanks__countdown {
+  animation: mood-thanks-aux-in 600ms var(--ease-out) 550ms both;
+}
+
+@keyframes mood-thanks-aux-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0);   }
+}
+
+/* Banner fade — the wordmark dips out as the kanji "leaves it" and
+   eases back in once the countdown kanji has landed. The visual lie
+   is that the same glyph moved; in fact there are two and one is
+   briefly invisible. */
+body.kokoro-arriving-from-banner .banner__title,
+body.kokoro-arriving-from-banner .banner__kanji {
+  animation: banner-fade-during-arrival 1100ms var(--ease-out) both;
+}
+
+@keyframes banner-fade-during-arrival {
+  0%   { opacity: 0.92; transform: translateY(0);    }
+  20%  { opacity: 0;    transform: translateY(-2px); }
+  75%  { opacity: 0;    transform: translateY(0);    }
+  100% { opacity: 0.92; transform: translateY(0);    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mood-thanks-card[data-arrival='from-banner'] .mood-thanks__kanji,
+  body.kokoro-arriving-from-banner .banner__title,
+  body.kokoro-arriving-from-banner .banner__kanji {
+    animation: none;
+  }
+}
+
 .mood-thanks__title {
   margin: 0;
   font-family: var(--font-display);
