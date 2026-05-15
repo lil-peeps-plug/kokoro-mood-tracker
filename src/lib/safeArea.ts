@@ -20,6 +20,12 @@ interface SafeAreaInset {
 interface TelegramWebAppLike {
   safeAreaInset?: SafeAreaInset
   contentSafeAreaInset?: SafeAreaInset
+  /** True visible height of the Mini App in iOS Telegram. window.innerHeight
+   *  and `100%` are unreliable there — Telegram lies about layout viewport
+   *  when its swipe-down gesture armed, leaving the tab bar pushed below
+   *  what the user actually sees. */
+  viewportHeight?: number
+  viewportStableHeight?: number
   onEvent?: (event: string, handler: () => void) => void
 }
 
@@ -53,6 +59,15 @@ function syncFromTelegram(): void {
   setVar('--tg-safe-bottom', bottom)
   setVar('--tg-safe-left',   left)
   setVar('--tg-safe-right',  right)
+
+  // Authoritative viewport height. Stable variant ignores the keyboard
+  // popping in/out; we use it so the tab bar stays anchored to the
+  // actually-visible bottom edge even when iOS Telegram lies about
+  // layout viewport.
+  const vh = tg.viewportStableHeight ?? tg.viewportHeight
+  if (typeof vh === 'number' && !Number.isNaN(vh) && vh > 0) {
+    document.documentElement.style.setProperty('--tg-viewport-h', `${vh}px`)
+  }
 }
 
 let bound = false

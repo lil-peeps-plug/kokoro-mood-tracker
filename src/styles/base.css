@@ -106,7 +106,11 @@ body {
 #root {
   position: relative;
   width: 100%;
-  height: 100%;
+  /* Use Telegram's authoritative viewport height (set by safeArea.ts).
+     Falls back to 100dvh in browsers. height:100% was unreliable in
+     iOS Telegram — it sometimes resolved taller than what was actually
+     on screen, pushing the tab bar below the visible edge. */
+  height: var(--tg-viewport-h);
   overflow: hidden;
   background: var(--color-bg-base);
   isolation: isolate; /* keeps mix-blend-mode contained to this stack */

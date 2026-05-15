@@ -132,6 +132,11 @@
   --tg-safe-bottom: 0px;
   --tg-safe-left:   0px;
   --tg-safe-right:  0px;
+  /* Telegram-authoritative viewport height (set by safeArea.ts).
+     Falls back to 100dvh for browsers (works in iOS Safari 16+).
+     Used by #root/.app so the tab bar can't escape the visible
+     viewport even when iOS Telegram WebView lies about layout height. */
+  --tg-viewport-h:  100dvh;
 
   --safe-top:    max(env(safe-area-inset-top,    0px), var(--tg-safe-top));
   --safe-bottom: max(env(safe-area-inset-bottom, 0px), var(--tg-safe-bottom));

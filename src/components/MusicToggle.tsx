@@ -135,35 +135,67 @@ interface VolumeSliderProps {
 
 function VolumeSlider({ value, onChange, label }: VolumeSliderProps) {
   const trackRef = useRef<HTMLDivElement>(null)
+  // Keep the latest onChange in a ref so the document-level listeners
+  // attached on drag-start always call the current closure even if
+  // React re-renders mid-drag.
+  const onChangeRef = useRef(onChange)
+  onChangeRef.current = onChange
 
-  const setFromEvent = useCallback(
-    (clientX: number) => {
-      const track = trackRef.current
-      if (!track) return
-      const rect = track.getBoundingClientRect()
-      if (rect.width <= 0) return
-      const ratio = (clientX - rect.left) / rect.width
-      const clamped = Math.min(1, Math.max(0, ratio))
-      onChange(Math.round(clamped * 100))
+  const setFromClientX = useCallback((clientX: number) => {
+    const track = trackRef.current
+    if (!track) return
+    const rect = track.getBoundingClientRect()
+    if (rect.width <= 0) return
+    const ratio = (clientX - rect.left) / rect.width
+    const clamped = Math.min(1, Math.max(0, ratio))
+    onChangeRef.current(Math.round(clamped * 100))
+  }, [])
+
+  // Drag handling lives on the document, not the element. iOS Telegram
+  // WebView has been observed to silently drop setPointerCapture +
+  // subsequent pointermove events on the captured element; binding to
+  // the document instead sidesteps that whole class of bug.
+  const startDrag = useCallback(
+    (initialX: number) => {
+      setFromClientX(initialX)
+
+      function onPointerMove(ev: PointerEvent) {
+        setFromClientX(ev.clientX)
+      }
+      function onTouchMove(ev: TouchEvent) {
+        if (ev.touches.length === 0) return
+        ev.preventDefault() // stop the page scrolling while dragging
+        setFromClientX(ev.touches[0].clientX)
+      }
+      function onEnd() {
+        document.removeEventListener('pointermove', onPointerMove)
+        document.removeEventListener('pointerup', onEnd)
+        document.removeEventListener('pointercancel', onEnd)
+        document.removeEventListener('touchmove', onTouchMove)
+        document.removeEventListener('touchend', onEnd)
+        document.removeEventListener('touchcancel', onEnd)
+      }
+      document.addEventListener('pointermove', onPointerMove)
+      document.addEventListener('pointerup', onEnd)
+      document.addEventListener('pointercancel', onEnd)
+      document.addEventListener('touchmove', onTouchMove, { passive: false })
+      document.addEventListener('touchend', onEnd)
+      document.addEventListener('touchcancel', onEnd)
     },
-    [onChange],
+    [setFromClientX],
   )
 
   function onPointerDown(e: React.PointerEvent<HTMLDivElement>) {
     e.preventDefault()
-    e.currentTarget.setPointerCapture(e.pointerId)
-    setFromEvent(e.clientX)
+    startDrag(e.clientX)
   }
 
-  function onPointerMove(e: React.PointerEvent<HTMLDivElement>) {
-    if (!e.currentTarget.hasPointerCapture(e.pointerId)) return
-    setFromEvent(e.clientX)
-  }
-
-  function onPointerUp(e: React.PointerEvent<HTMLDivElement>) {
-    if (e.currentTarget.hasPointerCapture(e.pointerId)) {
-      e.currentTarget.releasePointerCapture(e.pointerId)
-    }
+  // Belt-and-braces for iOS Safari/Telegram where the initial pointer
+  // sequence sometimes never fires. Touch events go first and are
+  // honoured by every iOS WebView ever shipped.
+  function onTouchStart(e: React.TouchEvent<HTMLDivElement>) {
+    if (e.touches.length === 0) return
+    startDrag(e.touches[0].clientX)
   }
 
   function onKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
@@ -196,9 +228,7 @@ function VolumeSlider({ value, onChange, label }: VolumeSliderProps) {
       aria-valuemax={100}
       aria-valuenow={pct}
       onPointerDown={onPointerDown}
-      onPointerMove={onPointerMove}
-      onPointerUp={onPointerUp}
-      onPointerCancel={onPointerUp}
+      onTouchStart={onTouchStart}
       onKeyDown={onKeyDown}
     >
       <div className="music-slider__track" aria-hidden="true" />
