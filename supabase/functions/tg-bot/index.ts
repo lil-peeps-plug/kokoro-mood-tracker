@@ -29,13 +29,13 @@
 const BOT_SECRET = Deno.env.get("BOT_SECRET")
 const MINI_APP_URL = (Deno.env.get("MINI_APP_URL") ?? "").replace(/\/+$/, "")
 
-// Ultra-minimal — title + a single greeting line in all three
-// languages separated by middle dots, plus one quiet hint line so
-// the user knows the buttons below are what opens the app. Detail
-// is left to the app itself; the bot's only job is to launch it.
-// HTML parse mode for the bold title (cheaper than MarkdownV2 here).
+// Title + one-line "what is this" so first-time openers know it's a
+// mood tracker, then the tri-lingual greeting, then a quiet hint
+// line pointing at the buttons. HTML parse mode for the bold title
+// (cheaper than MarkdownV2 here).
 const WELCOME_TEXT = [
   "🌸 <b>Kokoro 心</b>",
+  "A quiet mood tracker for our small circle.",
   "",
   "Welcome · Добро пожаловать · მოგესალმებით",
   "",
