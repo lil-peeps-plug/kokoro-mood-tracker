@@ -25,6 +25,10 @@ interface TelegramWebApp {
   version?: string
   ready?: () => void
   expand?: () => void
+  /** Available in WebApp v7.7+ — stops Telegram from intercepting
+   *  vertical drag gestures (otherwise sliders / scrolls get hijacked
+   *  by the swipe-to-close behaviour on iOS). */
+  disableVerticalSwipes?: () => void
 }
 
 function getWebApp(): TelegramWebApp | null {
@@ -45,6 +49,11 @@ export function initTelegram(): void {
   try {
     w?.ready?.()
     w?.expand?.()
+    // Stops Telegram from snagging vertical drag gestures inside the
+    // webview — without this, the volume slider and any future inner
+    // scroll containers fight with the "swipe down to close" handler.
+    // Method is missing on older clients; the optional chain no-ops.
+    w?.disableVerticalSwipes?.()
   } catch {
     // Outside Telegram or stubbed environment — nothing to do.
   }

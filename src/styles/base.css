@@ -623,6 +623,11 @@ body.is-admin-route #root {
   appearance: none;
   -webkit-appearance: none;
   cursor: pointer;
+  /* Tell the browser this control wants horizontal drags. Without this,
+     iOS Telegram routes the gesture to its swipe-to-close handler and
+     the slider never receives the touchmove. Belt-and-braces with
+     WebApp.disableVerticalSwipes() called from telegram.ts on init. */
+  touch-action: pan-x;
 }
 
 .music-menu__slider::-webkit-slider-runnable-track {
