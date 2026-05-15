@@ -29,42 +29,28 @@
 const BOT_SECRET = Deno.env.get("BOT_SECRET")
 const MINI_APP_URL = (Deno.env.get("MINI_APP_URL") ?? "").replace(/\/+$/, "")
 
-// Polished tri-lingual welcome. Uses Telegram's HTML parse mode for
-// visual hierarchy: bold title, blockquote tagline (renders with a
-// left bar in modern clients), italic hint. Order top-to-bottom:
-//   header  →  what it is  →  greeting in 3 langs  →  call to action.
+// Simple welcome. Flags live on the buttons only — kept out of the
+// body so the greeting line reads as plain text. HTML parse_mode is
+// used purely for the bold title.
 const WELCOME_TEXT = [
-  "🌸  <b>Kokoro 心</b>",
+  "🌸 <b>Kokoro 心</b>",
+  "A quiet mood tracker for our small circle.",
   "",
-  "<blockquote><i>A quiet mood tracker for our small circle.</i></blockquote>",
-  "",
-  "🇬🇧  Welcome",
-  "🇷🇺  Добро пожаловать",
-  "🇬🇪  მოგესალმებით",
-  "",
-  "<i>Tap your language below to open the app ↓</i>",
+  "Welcome · Добро пожаловать · მოგესალმებით",
 ].join("\n")
 
-interface KeyboardButton {
+interface InlineKeyboardButton {
   text: string
   web_app?: { url: string }
-}
-
-interface ReplyKeyboardMarkup {
-  keyboard: KeyboardButton[][]
-  /** Stays visible until explicitly removed. Needs a recent client. */
-  is_persistent?: boolean
-  /** Shrinks keys to fit content (vs. taking the full keyboard area). */
-  resize_keyboard?: boolean
-  /** Subtle hint shown in the message field placeholder. */
-  input_field_placeholder?: string
 }
 
 interface SendMessagePayload {
   chat_id: number
   text: string
   parse_mode?: "MarkdownV2" | "HTML"
-  reply_markup?: ReplyKeyboardMarkup
+  reply_markup?: {
+    inline_keyboard: InlineKeyboardButton[][]
+  }
 }
 
 async function tgApi(method: string, payload: unknown): Promise<void> {
@@ -83,22 +69,16 @@ async function tgApi(method: string, payload: unknown): Promise<void> {
   }
 }
 
-function languageReplyKeyboard(): ReplyKeyboardMarkup {
-  // Reply keyboard (persistent buttons at the bottom of the chat),
-  // not inline keyboard — these stay visible after the welcome
-  // message scrolls away, so the user can always tap one to open
-  // the Mini App in the chosen language without scrolling back.
+function languageInlineKeyboard(): InlineKeyboardButton[][] {
+  // Inline keyboard attached to the welcome message. Each row is one
+  // web_app button — tapping opens the Mini App with ?lang=<code>.
   // Stacked vertically because the non-Latin scripts read better
   // with their own row than crammed three-across.
-  return {
-    keyboard: [
-      [{ text: "🇬🇧 English",  web_app: { url: `${MINI_APP_URL}/?lang=en` } }],
-      [{ text: "🇷🇺 Русский",  web_app: { url: `${MINI_APP_URL}/?lang=ru` } }],
-      [{ text: "🇬🇪 ქართული",  web_app: { url: `${MINI_APP_URL}/?lang=ka` } }],
-    ],
-    is_persistent: true,
-    resize_keyboard: true,
-  }
+  return [
+    [{ text: "🇬🇧 English",  web_app: { url: `${MINI_APP_URL}/?lang=en` } }],
+    [{ text: "🇷🇺 Русский",  web_app: { url: `${MINI_APP_URL}/?lang=ru` } }],
+    [{ text: "🇬🇪 ქართული",  web_app: { url: `${MINI_APP_URL}/?lang=ka` } }],
+  ]
 }
 
 Deno.serve(async (req) => {
@@ -131,7 +111,7 @@ Deno.serve(async (req) => {
       chat_id: chatId,
       text: WELCOME_TEXT,
       parse_mode: "HTML",
-      reply_markup: languageReplyKeyboard(),
+      reply_markup: { inline_keyboard: languageInlineKeyboard() },
     }
     await tgApi("sendMessage", payload)
   }

@@ -2989,12 +2989,16 @@ body.is-admin-route #root {
 /* --- Bottom tab bar (Apple-style glass) ----------------------------- */
 
 .tab-bar {
-  position: relative;
-  flex: 0 0 auto;
-  /* Explicit z-index — without one, the tab bar defaults to z:auto
-     and got intermittently eclipsed by the viewstack's animated
-     children (the cards mount with translate+blur keyframes that
-     create stacking contexts). z:5 sits above topbar (z:4) too. */
+  /* Pinned to the viewport bottom directly. Earlier we relied on
+     `flex: 0 0 auto` inside .app__content, which kept missing on
+     iOS Telegram WebView because the flex chain resolved to a
+     wrong height. Going position:fixed sidesteps the chain
+     entirely — the tab bar is anchored to the visible bottom no
+     matter what html/body/#root are doing. */
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
   z-index: 5;
   display: grid;
   grid-template-columns: 1fr 1fr;
