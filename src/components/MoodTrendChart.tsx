@@ -64,7 +64,7 @@ export default function MoodTrendChart({ entries }: Props) {
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        animation: { duration: 600 },
+        animation: { duration: 1100, easing: 'easeOutCubic' },
         plugins: {
           legend: { display: false },
           tooltip: {

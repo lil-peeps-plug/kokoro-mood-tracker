@@ -18,9 +18,12 @@ import { useEffect, useRef } from 'react'
 //  through normally so UI controls keep working.
 // ============================================================
 
-const MAX_PETALS = 18
-const BURST_MIN_S = 8
-const BURST_MAX_S = 15
+// Lower particle ceilings — petals each take a full canvas redraw per
+// frame, and on a 60 Hz iPhone with backdrop-filter elsewhere on the
+// page they used to stutter under the old MAX_PETALS = 18.
+const MAX_PETALS = 12
+const BURST_MIN_S = 10
+const BURST_MAX_S = 18
 
 interface Petal {
   x: number
@@ -149,7 +152,7 @@ export default function SakuraCanvas() {
     }
 
     function spawnBurst() {
-      const count = Math.floor(randomBetween(5, 11))
+      const count = Math.floor(randomBetween(4, 8))
       const { w, h, dpr: d } = sizeRef.current
       const fromLeft = Math.random() < 0.5
       const startX = fromLeft ? -20 * d : w + 20 * d
@@ -167,8 +170,8 @@ export default function SakuraCanvas() {
     }
 
     function spawnSparks(x: number, y: number) {
-      // More particles, faster outward velocities, brighter cores.
-      const count = Math.floor(randomBetween(12, 18))
+      // Tap spark particle count. Reduced from 12–18 for paint cost.
+      const count = Math.floor(randomBetween(8, 12))
       const d = sizeRef.current.dpr
       for (let i = 0; i < count; i++) {
         const angle = (Math.PI * 2 * i) / count + randomBetween(-0.3, 0.3)

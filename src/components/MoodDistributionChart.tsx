@@ -44,7 +44,7 @@ export default function MoodDistributionChart({ entries }: Props) {
         responsive: true,
         maintainAspectRatio: false,
         cutout: '64%',
-        animation: { duration: 600 },
+        animation: { duration: 1100, easing: 'easeOutCubic' },
         plugins: {
           legend: {
             position: 'bottom',

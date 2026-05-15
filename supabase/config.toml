@@ -396,6 +396,14 @@ verify_jwt = false
 [functions.admin-bootstrap]
 verify_jwt = false
 
+# tg-bot is the Telegram webhook target. Telegram never sends a
+# Supabase JWT; we authenticate the bot's identity implicitly by the
+# webhook URL being a secret. Optionally, also verify the
+# `X-Telegram-Bot-Api-Secret-Token` header (configurable via
+# setWebhook) for an extra check inside the function body.
+[functions.tg-bot]
+verify_jwt = false
+
 [analytics]
 enabled = true
 port = 54327

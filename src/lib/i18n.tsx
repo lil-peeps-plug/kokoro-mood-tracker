@@ -43,6 +43,8 @@ interface Strings {
   logScoreLabels: Record<1 | 2 | 3 | 4 | 5, string>
   logNotePlaceholder: string
   logSave: string
+  logUpdate: string
+  logEdit: string
   logSaving: string
   logSaved: string
   logThanksTitle: string
@@ -51,6 +53,9 @@ interface Strings {
   logAlreadyTitle: string
   logAlreadyBody: string
   logCountdownLabel: string
+
+  slotLabels: Record<'morning' | 'afternoon' | 'night', string>
+  slotEmpty: string
 
   statsTitle: string
   statsSubtitle: string
@@ -132,14 +137,22 @@ const en: Strings = {
   },
   logNotePlaceholder: 'A short note (optional)',
   logSave: 'Save mood',
+  logUpdate: 'Update mood',
+  logEdit: 'Edit mood',
   logSaving: 'Saving…',
   logSaved: 'Saved ✓',
   logThanksTitle: 'Thank you ♡',
   logThanksBody: 'Your mood was saved.',
-  logThanksReminder: 'Remember, you matter ♡',
+  logThanksReminder: 'Remember, you matter!',
   logAlreadyTitle: 'See you tomorrow ♡',
-  logAlreadyBody: "You've already shared today's mood.",
+  logAlreadyBody: "You've logged all three check-ins for today.",
   logCountdownLabel: 'New day in',
+  slotLabels: {
+    morning: 'Morning',
+    afternoon: 'Afternoon',
+    night: 'Night',
+  },
+  slotEmpty: 'Not yet',
   statsTitle: 'Your story so far',
   statsSubtitle:
     'Averages, streaks, charts, and an option to export everything to PDF.',
@@ -212,14 +225,22 @@ const ru: Strings = {
   },
   logNotePlaceholder: 'Короткая заметка (необязательно)',
   logSave: 'Сохранить',
+  logUpdate: 'Обновить',
+  logEdit: 'Изменить',
   logSaving: 'Сохраняю…',
   logSaved: 'Сохранено ✓',
   logThanksTitle: 'Спасибо ♡',
   logThanksBody: 'Настроение сохранено.',
-  logThanksReminder: 'Помни — ты важен ♡',
+  logThanksReminder: 'Помни — ты важен!',
   logAlreadyTitle: 'До завтра ♡',
-  logAlreadyBody: 'Ты уже отметил настроение сегодня.',
+  logAlreadyBody: 'Все три отметки на сегодня сделаны.',
   logCountdownLabel: 'Новый день через',
+  slotLabels: {
+    morning: 'Утро',
+    afternoon: 'День',
+    night: 'Вечер',
+  },
+  slotEmpty: 'Пока нет',
   statsTitle: 'Твоя история',
   statsSubtitle:
     'Средние, серии, графики и экспорт в PDF.',
@@ -293,14 +314,22 @@ const ka: Strings = {
   },
   logNotePlaceholder: 'მოკლე ჩანაწერი (არასავალდებულო)',
   logSave: 'შენახვა',
+  logUpdate: 'განახლება',
+  logEdit: 'რედაქტირება',
   logSaving: 'ვინახავ…',
   logSaved: 'შენახულია ✓',
   logThanksTitle: 'გმადლობთ ♡',
   logThanksBody: 'თქვენი განწყობა შენახულია.',
-  logThanksReminder: 'გახსოვდე, შენ მნიშვნელოვანი ხარ ♡',
+  logThanksReminder: 'გახსოვდე, შენ მნიშვნელოვანი ხარ!',
   logAlreadyTitle: 'ხვალამდე ♡',
-  logAlreadyBody: 'შენ უკვე გააზიარე დღევანდელი განწყობა.',
+  logAlreadyBody: 'სამივე ჩანაწერი დღევანდელი დასრულდა.',
   logCountdownLabel: 'ახალი დღე იწყება',
+  slotLabels: {
+    morning: 'დილა',
+    afternoon: 'შუადღე',
+    night: 'საღამო',
+  },
+  slotEmpty: 'ჯერ არა',
   statsTitle: 'შენი ისტორია',
   statsSubtitle: 'საშუალოები, სერიები, გრაფიკები და PDF ექსპორტი.',
   statsStub: 'გრაფიკები მომდევნო ფაზაში. PDF ექსპორტი მალე.',
@@ -366,14 +395,37 @@ const I18nContext = createContext<I18nValue | null>(null)
 
 function detectInitialLocale(): Locale {
   if (typeof window === 'undefined') return 'en'
+
+  // 1. Highest priority — the URL ?lang= param. The Telegram bot's
+  //    /start welcome message has three inline web_app buttons; each
+  //    opens the Mini App with ?lang=en|ru|ka so the user's first
+  //    paint is already in their chosen language. We also persist
+  //    the pick so subsequent loads remember it.
+  try {
+    const params = new URLSearchParams(window.location.search)
+    const fromUrl = params.get('lang')
+    if (fromUrl === 'en' || fromUrl === 'ru' || fromUrl === 'ka') {
+      try {
+        window.localStorage.setItem(STORAGE_KEY, fromUrl)
+      } catch {
+        /* localStorage blocked */
+      }
+      return fromUrl
+    }
+  } catch {
+    /* URL parsing failed in some exotic webview — fall through */
+  }
+
+  // 2. Returning visit — what the user picked last time.
   try {
     const stored = window.localStorage.getItem(STORAGE_KEY)
     if (stored === 'en' || stored === 'ru' || stored === 'ka') return stored
   } catch {
-    // localStorage blocked — fall through to default.
+    /* localStorage blocked */
   }
-  // First launch defaults to English regardless of browser language;
-  // the user can switch via the picker.
+
+  // 3. Hard default. We don't read navigator.language because the
+  //    bot's welcome flow is the canonical entry point for new users.
   return 'en'
 }
 

@@ -11,6 +11,7 @@ import AboutModal from '@/components/AboutModal'
 import Banner from '@/components/Banner'
 import DedicationTicker from '@/components/DedicationTicker'
 import ErrorBoundary from '@/components/ErrorBoundary'
+import ErrorScreen from '@/components/ErrorScreen'
 import LanternGlow from '@/components/LanternGlow'
 import LoadingScreen from '@/components/LoadingScreen'
 import SakuraCanvas from '@/components/SakuraCanvas'
@@ -18,6 +19,12 @@ import SoundVisualizer from '@/components/SoundVisualizer'
 import TabBar, { type TabKey } from '@/components/TabBar'
 import LogMoodView from '@/views/LogMoodView'
 import StatsView from '@/views/StatsView'
+
+// Visit /#preview-error in the browser to render the error screen
+// directly — handy for design tweaks without provoking a real failure.
+const isErrorPreview =
+  typeof window !== 'undefined' &&
+  window.location.hash === '#preview-error'
 
 // Dev login is only built into dev. In production builds the ternary is
 // a constant-false branch and Vite removes the dynamic import.
@@ -64,18 +71,28 @@ export default function App() {
     return () => window.clearTimeout(t)
   }, [splash])
 
+  if (isErrorPreview) {
+    return (
+      <Shell>
+        <Centered>
+          <ErrorScreen
+            message="This is a preview of the error screen."
+            onRetry={() => {
+              window.location.hash = ''
+              window.location.reload()
+            }}
+          />
+        </Centered>
+      </Shell>
+    )
+  }
+
   return (
     <ErrorBoundary
       fallback={(reset) => (
         <Shell>
           <Centered>
-            <div className="app-stack">
-              <h1 className="app-title">Kokoro</h1>
-              <p className="app-status app-status--error">{t.errorBoundary}</p>
-              <button type="button" className="primary-btn" onClick={reset}>
-                {t.errorRetry}
-              </button>
-            </div>
+            <ErrorScreen onRetry={reset} />
           </Centered>
         </Shell>
       )}
@@ -124,10 +141,7 @@ function renderApp({
     return (
       <Shell>
         <Centered>
-          <div className="app-stack">
-            <h1 className="app-title">Kokoro</h1>
-            <p className="app-status app-status--error">{error}</p>
-          </div>
+          <ErrorScreen message={error} />
         </Centered>
       </Shell>
     )

@@ -146,11 +146,12 @@
   --ease-glide:  cubic-bezier(0.45, 0, 0.55, 1);
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 
-  /* Durations bumped once more — user explicitly asked for smoother
-     transitions everywhere. Each tier is ~20% longer than before so
-     things glide a touch more without feeling sluggish. */
-  --dur-fast:    260ms;
-  --dur-normal:  480ms;
-  --dur-slow:    760ms;
+  /* Durations bumped again — user asked for "super smooth, a bit
+     slow, visibly pleasurable" animations across the entire app.
+     Every transition that pulls from these tokens (which is most of
+     them) gets the slowdown for free. The pulse stays where it is. */
+  --dur-fast:    340ms;
+  --dur-normal:  620ms;
+  --dur-slow:    1000ms;
   --dur-pulse:   8.5s;
 }

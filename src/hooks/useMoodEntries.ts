@@ -8,10 +8,16 @@ interface State {
   error: string | null
 }
 
+// Cross-component refresh signal. LogMoodView dispatches this after a
+// successful save/upsert; useMoodEntries (in StatsView) listens for it
+// and refetches so the charts, calendar, and history stay in sync.
+export const MOOD_UPDATED_EVENT = 'kokoro:mood-updated'
+
 /**
  * Fetches the signed-in user's mood entries for the given range,
- * newest first. Auto-refetches whenever `range` changes. RLS on
- * Supabase guarantees we only ever see our own rows.
+ * newest first. Auto-refetches whenever `range` changes OR whenever
+ * a `kokoro:mood-updated` window event fires (dispatched from
+ * LogMoodView after a save). RLS guarantees we only see our own rows.
  */
 export function useMoodEntries(range: Range) {
   const [state, setState] = useState<State>({
@@ -22,6 +28,17 @@ export function useMoodEntries(range: Range) {
   const [tick, setTick] = useState(0)
 
   const refetch = useCallback(() => setTick((n) => n + 1), [])
+
+  // Listen for cross-component mood-changed signals. Attached once on
+  // mount; refetches by bumping the same tick the manual refetch uses.
+  useEffect(() => {
+    function onMoodUpdated() {
+      setTick((n) => n + 1)
+    }
+    window.addEventListener(MOOD_UPDATED_EVENT, onMoodUpdated)
+    return () =>
+      window.removeEventListener(MOOD_UPDATED_EVENT, onMoodUpdated)
+  }, [])
 
   useEffect(() => {
     let cancelled = false

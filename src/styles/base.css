@@ -23,25 +23,42 @@ body,
 
 /* Language switch transition.
    View Transitions API gives the document a crossfade by default. We
-   override with a longer slide + fade so the brief intermediate moment
-   is masked by motion — the eye reads "things moved", not "things
-   went transparent". Longer feels more graceful. */
+   override with a longer slide + soft defocus so the change reads as
+   "the words gently rotate in", not "the screen blinked". Each side
+   gets its own keyframe so the old content drifts up and out while
+   the new drifts up and into focus. */
 ::view-transition-old(root) {
-  animation: lang-out 480ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation: lang-out 760ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 ::view-transition-new(root) {
-  animation: lang-in 560ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation: lang-in 920ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 @keyframes lang-out {
-  from { opacity: 1; transform: translateY(0); }
-  to   { opacity: 0; transform: translateY(-6px); }
+  from {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-10px);
+    filter: blur(3px);
+  }
 }
 
 @keyframes lang-in {
-  from { opacity: 0; transform: translateY(6px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+    filter: blur(3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
 }
 
 html {
@@ -204,6 +221,68 @@ body.is-admin-route #root {
   to   { opacity: 1; transform: translateY(0); }
 }
 
+/* --- Error screen ----------------------------------------------------- */
+/* Used by useAuth-error path, the ErrorBoundary fallback, and the
+   #preview-error URL hash. KOKORO uppercase wordmark on the left,
+   the kanji 心 aside it on the right (same shape as the banner). */
+
+.error-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-6);
+  text-align: center;
+  max-width: 24rem;
+  animation: card-mount-in var(--dur-slow) var(--ease-out) both;
+}
+
+.error-brand {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.55em;
+  user-select: none;
+}
+
+.error-brand__word {
+  font-family: var(--font-display);
+  font-size: var(--fs-2xl);
+  font-weight: 700;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--color-text);
+  /* Soft bloom — picks up the warm cream of the kanji aside it. */
+  text-shadow: 0 0 18px oklch(0.88 0.05 75 / 0.18);
+  /* Letter-spacing pushes the final glyph past the box; pad to recenter. */
+  padding-left: 0.32em;
+}
+
+.error-brand__kanji {
+  font-family: var(--font-display);
+  font-size: var(--fs-xl);
+  font-weight: 400;
+  line-height: 1;
+  color: var(--color-accent);
+  opacity: 0.85;
+  text-shadow: 0 0 22px oklch(0.88 0.05 75 / 0.32);
+}
+
+.error-stack__message {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--fs-sm);
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  line-height: 1.55;
+  color: var(--color-text-muted);
+}
+
+.error-stack__retry {
+  align-self: stretch;
+  margin-top: var(--space-2);
+}
+
 /* --- Status text utilities (loading / error) --------------------------- */
 
 .app-stack {
@@ -248,12 +327,19 @@ body.is-admin-route #root {
   flex: 0 0 auto;
   z-index: 4;
   background: var(--color-surface);
-  backdrop-filter: blur(40px) saturate(180%);
-  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  /* Matches the music/lang button blur exactly so the whole glass
+     system reads as one consistent treatment across the topbar and
+     its inner controls. */
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
   border-bottom: 1px solid oklch(1 0 0 / 0.06);
   box-shadow:
     inset 0 1px 0 var(--color-edge-hi),
     0 8px 28px oklch(0 0 0 / 0.18);
+  /* Intentionally no `contain` here. `contain: paint` clips the menu
+     popovers (they hang below the topbar); `contain: layout` makes the
+     topbar a containing block which has also been observed to clip the
+     same popovers in WebKit. Without `contain`, the menus paint freely. */
 }
 
 /* --- Banner (top header) --------------------------------------------- */
@@ -275,7 +361,10 @@ body.is-admin-route #root {
     max(calc(var(--safe-top) + var(--space-4)), var(--space-10))
     var(--space-5)
     var(--space-4);
-  z-index: 4;
+  /* Higher than .ticker (z:4) so the music/language popovers, which
+     are descendants of .banner and visually overflow below it, paint
+     over the running text instead of being eclipsed by it. */
+  z-index: 5;
   /* Hairline divider between banner and ticker so the two zones read
      as separate even though they share the same topbar surface. */
   border-bottom: 1px solid oklch(1 0 0 / 0.05);
@@ -337,6 +426,22 @@ body.is-admin-route #root {
   z-index: 5;
 }
 
+/* Touch ergonomics: the visible button is 30 px but we expand the
+   tappable hit area to ~44 px with an invisible pseudo. Apple HIG
+   recommends 44×44 minimum. */
+.music-btn::before,
+.lang__btn::before {
+  content: '';
+  position: absolute;
+  inset: -7px;
+  border-radius: var(--radius-full);
+}
+
+.music-btn,
+.lang__btn {
+  position: relative;
+}
+
 .music-btn {
   width: var(--topbar-icon-size);
   height: var(--topbar-icon-size);
@@ -357,9 +462,14 @@ body.is-admin-route #root {
   box-shadow:
     inset 0 1px 0 var(--color-edge-hi),
     0 4px 14px oklch(0 0 0 / 0.25);
+  /* Color + border use --dur-slow so the playing→stopped transition
+     glides at roughly the same pace as the visualizer's decay
+     (~1 s), preventing the "button snaps muted while the bars are
+     still settling" feel. Background + transform stay quick since
+     they only fire on hover / press. */
   transition:
-    color var(--dur-fast) var(--ease-out),
-    border-color var(--dur-fast) var(--ease-out),
+    color var(--dur-slow) var(--ease-out),
+    border-color var(--dur-slow) var(--ease-out),
     background var(--dur-fast) var(--ease-out),
     transform var(--dur-fast) var(--ease-out);
 }
@@ -405,25 +515,26 @@ body.is-admin-route #root {
   /* Drop below the button with breathing room. */
   top: calc(100% + var(--space-5));
   left: 0;
+  z-index: 10;
   min-width: 220px;
   padding: var(--space-2);
-  /* Same translucent backdrop-filter surface as .lang__menu — the two
-     popovers now feel like the same component family. */
-  background: var(--color-surface-elev);
+  /* Fully opaque surface — same hue as --color-surface-elev but no
+     alpha. Nothing behind shows through; backdrop-filter dropped as
+     it's pointless on an opaque background. */
+  background: oklch(0.21 0.035 320);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  backdrop-filter: blur(32px) saturate(180%);
-  -webkit-backdrop-filter: blur(32px) saturate(180%);
   box-shadow:
     inset 0 1px 0 var(--color-edge-hi),
     0 18px 50px oklch(0 0 0 / 0.55);
-  /* Soft fade + gentle slide. Matches the language popover. */
+  /* Slow, deliberate fade + soft slide so the menu materializes
+     rather than snapping into place. */
   opacity: 0;
-  transform: translateY(-6px);
+  transform: translateY(-8px);
   pointer-events: none;
   transition:
-    opacity 360ms var(--ease-out),
-    transform 360ms var(--ease-out);
+    opacity var(--dur-slow) var(--ease-out),
+    transform var(--dur-slow) var(--ease-out);
 }
 
 .music-menu.is-open {
@@ -600,19 +711,13 @@ body.is-admin-route #root {
   height: var(--vis-height);
   z-index: 4;
   pointer-events: none;
-  /* Slow, gentle fade-in (and out) when music starts/stops. */
-  opacity: 0;
-  transform: translateY(6px);
-  transition:
-    opacity 1800ms var(--ease-out),
-    transform 1800ms var(--ease-out);
+  /* The container is a fixed slot — always visible at 0.55. The
+     canvas inside is what fades: bars draw + decay over time, and
+     when the envelope is at rest the canvas is empty (transparent).
+     No double-fade with the bars themselves. */
+  opacity: 0.55;
   /* Bars glow lightly over the bg rather than darken it. */
   mix-blend-mode: screen;
-}
-
-.visualizer.is-active {
-  opacity: 0.55;
-  transform: translateY(0);
 }
 
 .visualizer__canvas {
@@ -631,6 +736,9 @@ body.is-admin-route #root {
 }
 
 .lang__btn {
+  /* Pill with the 2-letter language code — same colors / border / glow
+     as .music-btn so they read as the same family, just shaped to fit
+     text rather than an icon. */
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -681,26 +789,26 @@ body.is-admin-route #root {
   /* Anchored to the language button (top-right), opening downward. */
   top: calc(100% + var(--space-5));
   right: 0;
+  z-index: 10;
   margin: 0;
   padding: var(--space-1);
   list-style: none;
   min-width: 170px;
-  background: var(--color-surface-elev);
+  /* Fully opaque, matches .music-menu. */
+  background: oklch(0.21 0.035 320);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  backdrop-filter: blur(32px) saturate(180%);
-  -webkit-backdrop-filter: blur(32px) saturate(180%);
   box-shadow:
     inset 0 1px 0 var(--color-edge-hi),
     0 18px 50px oklch(0 0 0 / 0.55);
-  /* Soft fade + gentle slide — slower than a typical dropdown for
-     consistency with the app's overall pacing. */
+  /* Slow, deliberate fade + soft slide so the menu materializes
+     rather than snapping into place. */
   opacity: 0;
-  transform: translateY(-6px);
+  transform: translateY(-8px);
   pointer-events: none;
   transition:
-    opacity 360ms var(--ease-out),
-    transform 360ms var(--ease-out);
+    opacity var(--dur-slow) var(--ease-out),
+    transform var(--dur-slow) var(--ease-out);
 }
 
 .lang__menu.is-open {
@@ -782,8 +890,6 @@ body.is-admin-route #root {
   font-weight: 400;
   letter-spacing: 0.06em;
   color: var(--color-text-faint);
-  /* Fade out smoothly when a popover opens above it (see :has() below). */
-  transition: opacity var(--dur-normal) var(--ease-out);
   -webkit-mask-image: linear-gradient(
     90deg,
     transparent 0%,
@@ -819,14 +925,6 @@ body.is-admin-route #root {
 @keyframes ticker-scroll {
   from { transform: translateX(0); }
   to   { transform: translateX(-50%); }
-}
-
-/* When either popover is open, fade the ticker out of the way so the
-   running text doesn't peek behind the menu. */
-.topbar:has(.lang__menu.is-open) .ticker,
-.topbar:has(.music-menu.is-open) .ticker {
-  opacity: 0;
-  pointer-events: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -889,6 +987,13 @@ body.is-admin-route #root {
   border: 1px solid var(--color-card-edge);
   border-radius: var(--radius-lg);
   overflow: hidden;
+  /* Mount keyframe — fires every time a card with a fresh React key
+     enters the DOM (e.g. slot picker → countdown swap, or the
+     countdown rolls over at midnight back to the picker). Translate
+     + blur, NO opacity in the from-state, so the swap never shows a
+     blank moment between the old card unmounting and the new one
+     becoming visible. */
+  animation: card-mount-in var(--dur-slow) var(--ease-out) both;
   box-shadow:
     inset 0 1px 0 var(--color-edge-hi),
     inset 0 -1px 0 var(--color-edge-lo),
@@ -916,20 +1021,35 @@ body.is-admin-route #root {
   to   { opacity: 1; transform: translateY(0); }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .card > * { animation: none; }
+@keyframes card-mount-in {
+  from {
+    transform: translateY(10px) scale(0.985);
+    filter: blur(3px);
+  }
+  to {
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
 }
 
-/* Subtle gradient sheen for depth — pure decoration */
+@media (prefers-reduced-motion: reduce) {
+  .card > * { animation: none; }
+  .card { animation: none; }
+}
+
+/* Subtle gradient sheen for depth — pure decoration. rgba (not
+   oklch) because html2canvas walks this pseudo's computed
+   background-image string during PDF capture even when it's display
+   none, and chokes on oklch() inside gradients. */
 .card::before {
   content: '';
   position: absolute;
   inset: 0;
   background: linear-gradient(
     180deg,
-    oklch(1 0 0 / 0.028) 0%,
+    rgba(255, 255, 255, 0.028) 0%,
     transparent 30%,
-    oklch(0 0 0 / 0.20) 100%
+    rgba(0, 0, 0, 0.20) 100%
   );
   pointer-events: none;
   border-radius: inherit;
@@ -975,6 +1095,13 @@ body.is-admin-route #root {
   font-size: var(--fs-xs);
   text-align: center;
   line-height: 1.5;
+  /* Soft mount fade — error messages shouldn't slam in mid-flow. */
+  animation: card-error-in var(--dur-normal) var(--ease-out) both;
+}
+
+@keyframes card-error-in {
+  from { opacity: 0; transform: translateY(2px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 .card__stub {
@@ -1096,8 +1223,8 @@ body.is-admin-route #root {
   -webkit-backdrop-filter: blur(8px);
   /* Entry animation fires on mount. The transition handles the exit
      when .is-exiting is added (see below). */
-  animation: about-backdrop-in 520ms var(--ease-out);
-  transition: opacity 480ms var(--ease-out);
+  animation: about-backdrop-in var(--dur-normal) var(--ease-out);
+  transition: opacity var(--dur-normal) var(--ease-out);
   opacity: 1;
 }
 
@@ -1120,10 +1247,10 @@ body.is-admin-route #root {
   box-shadow:
     inset 0 1px 0 var(--color-edge-hi),
     0 30px 80px oklch(0 0 0 / 0.6);
-  animation: about-card-in 640ms var(--ease-out);
+  animation: about-card-in var(--dur-slow) var(--ease-out);
   transition:
-    opacity 480ms var(--ease-out),
-    transform 480ms var(--ease-out);
+    opacity var(--dur-normal) var(--ease-out),
+    transform var(--dur-normal) var(--ease-out);
   opacity: 1;
   transform: translateY(0) scale(1);
 }
@@ -1324,7 +1451,11 @@ body.is-admin-route #root {
   background: oklch(0 0 0 / 0.65);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  animation: about-backdrop-in 360ms var(--ease-out);
+  animation: about-backdrop-in var(--dur-normal) var(--ease-out) both;
+}
+
+.legal-backdrop.is-exiting {
+  animation: legal-backdrop-out var(--dur-normal) var(--ease-out) forwards;
 }
 
 .legal-card {
@@ -1340,8 +1471,43 @@ body.is-admin-route #root {
   box-shadow:
     inset 0 1px 0 var(--color-edge-hi),
     0 32px 80px oklch(0 0 0 / 0.55);
-  animation: about-card-in 440ms var(--ease-out);
+  animation: legal-card-in var(--dur-slow) var(--ease-out) both;
   overflow: hidden;
+}
+
+.legal-card.is-exiting {
+  animation: legal-card-out var(--dur-slow) var(--ease-out) forwards;
+}
+
+@keyframes legal-backdrop-out {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
+@keyframes legal-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.97);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes legal-card-out {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.985);
+    filter: blur(3px);
+  }
 }
 
 .legal-card__head {
@@ -1693,6 +1859,42 @@ body.is-admin-route #root {
   display: none;
 }
 
+/* .card box-shadow uses direct oklch — html2canvas can't parse it.
+   Override with rgba equivalents so the export doesn't log warnings
+   (the shadow is barely visible in the snapshot anyway). */
+.is-printing.card,
+.is-printing .card {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.18),
+    0 16px 50px rgba(0, 0, 0, 0.55),
+    0 4px 12px rgba(0, 0, 0, 0.35);
+}
+
+/* Nuke ALL remaining box-shadow / text-shadow / background-image on
+   descendants of the captured card. Many rules across base.css use
+   oklch() in these properties; rather than override each one
+   individually we simply remove them during capture. The PDF report
+   reads cleaner without decorative shadows anyway. */
+.is-printing *,
+.is-printing *::before,
+.is-printing *::after {
+  box-shadow: none !important;
+  text-shadow: none !important;
+  background-image: none !important;
+}
+
+/* …except restore the card's own outer + inner shadow so the page
+   still has a card silhouette in the PDF. */
+.is-printing.card,
+.is-printing .card {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.18),
+    0 16px 50px rgba(0, 0, 0, 0.55),
+    0 4px 12px rgba(0, 0, 0, 0.35) !important;
+}
+
 /* --- Stats UI -------------------------------------------------------- */
 
 .range-filter {
@@ -1941,13 +2143,48 @@ body.is-admin-route #root {
 }
 
 .history__item {
+  position: relative;
   display: flex;
   align-items: flex-start;
   gap: var(--space-3);
-  padding: var(--space-3);
+  padding: var(--space-3) calc(var(--space-3) + var(--space-6))
+    var(--space-3) var(--space-3);
   background: var(--color-input);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
+  /* Card-like inner highlight + subtle drop shadow so the rows read
+     as the same material family as the main .card surface above.
+     rgba (not oklch) because this subtree is captured by html2canvas
+     during PDF export, and that library can't parse oklch(). */
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 1px 6px rgba(0, 0, 0, 0.18);
+  transition:
+    border-color var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out);
+}
+
+.history__item:hover {
+  border-color: rgba(170, 138, 200, 0.55);
+}
+
+/* 心 watermark on the right of every record — quiet branding mark
+   that ties the list back to the rest of the app's vocabulary. */
+.history__item::after {
+  content: '心';
+  position: absolute;
+  top: 50%;
+  right: var(--space-3);
+  transform: translateY(-50%);
+  font-family: var(--font-display);
+  font-size: var(--fs-lg);
+  font-weight: 400;
+  color: #e6c39f;
+  opacity: 0.22;
+  pointer-events: none;
+  user-select: none;
+  /* rgba so html2canvas can parse it during PDF capture. */
+  text-shadow: 0 0 12px rgba(230, 195, 159, 0.18);
 }
 
 .history__badge {
@@ -1958,10 +2195,14 @@ body.is-admin-route #root {
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  color: oklch(0.14 0.02 320);
+  color: #231c30;
   font-size: var(--fs-sm);
   font-weight: 700;
   letter-spacing: -0.02em;
+  /* Soft halo around the score swatch so it lifts off the row. */
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    0 4px 12px rgba(0, 0, 0, 0.32);
 }
 
 .history__body {
@@ -1986,6 +2227,284 @@ body.is-admin-route #root {
   word-break: break-word;
 }
 
+/* --- Daily slot picker (morning / afternoon / night) ------------------ */
+/* Three round buttons across the top of LogMoodView. Tap one to bring
+   up the score picker below. A filled slot wears a small numeric
+   badge over its icon; the active slot wears the warm accent ring. */
+
+.slot-picker {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-4);
+  justify-items: center;
+}
+
+.slot-pick-btn {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  background: transparent;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  color: var(--color-text-muted);
+  transition: color var(--dur-fast) var(--ease-out);
+}
+
+.slot-pick-btn__icon {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: var(--radius-full);
+  background: var(--color-input);
+  border: 1.5px solid var(--color-border);
+  color: var(--color-text-muted);
+  transition:
+    background var(--dur-normal) var(--ease-out),
+    border-color var(--dur-normal) var(--ease-out),
+    color var(--dur-normal) var(--ease-out),
+    transform 140ms var(--ease-out),
+    box-shadow var(--dur-normal) var(--ease-out);
+}
+
+.slot-pick-btn__icon svg {
+  width: 32px;
+  height: 32px;
+}
+
+.slot-pick-btn:hover .slot-pick-btn__icon {
+  color: var(--color-text);
+  border-color: oklch(0.55 0.05 320 / 0.55);
+}
+
+.slot-pick-btn:active .slot-pick-btn__icon {
+  transform: scale(0.94);
+}
+
+/* Already-saved slot: warm accent ring + cream icon. */
+.slot-pick-btn.is-filled {
+  color: var(--color-accent);
+}
+.slot-pick-btn.is-filled .slot-pick-btn__icon {
+  border-color: oklch(0.88 0.05 75 / 0.55);
+  color: var(--color-accent);
+  background: oklch(0.88 0.05 75 / 0.08);
+}
+
+/* Currently-being-edited slot: thicker dusty-rose ring + glow. */
+.slot-pick-btn.is-active .slot-pick-btn__icon {
+  border-color: var(--color-primary);
+  color: var(--color-text);
+  background: oklch(0.62 0.05 8 / 0.18);
+  box-shadow:
+    0 0 0 4px oklch(0.62 0.05 8 / 0.12),
+    0 8px 22px oklch(0 0 0 / 0.35);
+}
+
+.slot-pick-btn.is-active.is-filled .slot-pick-btn__icon {
+  /* Both rings — overlay the accent glow on top of the active ring. */
+  box-shadow:
+    0 0 0 4px oklch(0.62 0.05 8 / 0.12),
+    0 0 18px oklch(0.88 0.05 75 / 0.25),
+    0 8px 22px oklch(0 0 0 / 0.35);
+}
+
+.slot-pick-btn__label {
+  /* Inherit the body sans (--font-display) like every other card
+     control. Keeps the slot labels visually level with the title,
+     subtitle, score numbers, and Save button. */
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: inherit;
+}
+
+.slot-pick-btn__badge {
+  position: absolute;
+  top: -4px;
+  right: -2px;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-full);
+  background: var(--color-accent);
+  color: oklch(0.18 0.02 320);
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1;
+  border: 2px solid var(--color-card);
+  box-shadow: 0 4px 10px oklch(0 0 0 / 0.35);
+}
+
+/* Score picker + note + save, revealed when a slot is active. */
+.slot-editor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  animation: slot-editor-in var(--dur-normal) var(--ease-out);
+}
+
+@keyframes slot-editor-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Locked state — slot has been saved and the editor is showing the
+   stored values frozen, with an Edit button at the bottom. The
+   selected score and the note remain visible but are non-interactive
+   until the user taps Edit. */
+.slot-editor.is-locked .mood-btn:disabled {
+  opacity: 0.42;
+  cursor: default;
+  filter: none;
+}
+
+.slot-editor.is-locked .mood-btn.is-active:disabled {
+  /* Keep the saved choice prominently visible. */
+  opacity: 1;
+}
+
+.slot-editor.is-locked .mood-note__input:read-only {
+  background: oklch(0.12 0.02 320 / 0.55);
+  color: var(--color-text-muted);
+  cursor: default;
+}
+
+/* Two stacked actions inside a slot editor: the primary Save/Update
+   on top, and a ghost Edit affordance below. Both are always rendered
+   when the slot has an entry — the disabled state on whichever is
+   not currently the appropriate action conveys "you can't use me
+   right now" with the same smooth opacity ramp as the rest of the
+   primary buttons. */
+.slot-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+/* Edit affordance — a quiet inline text button. App-native vibe:
+   sentence case, normal letterspacing, faint by default, faintly
+   warmer on press / hover. No frame, no breath, no announcements —
+   just a thing you tap when you want to change what you saved. */
+.slot-edit-link {
+  align-self: center;
+  /* Horizontal padding is fixed; vertical padding + margin-top +
+     max-height are animated in the mount keyframe below so the
+     button grows itself into existence. */
+  padding-left: var(--space-3);
+  padding-right: var(--space-3);
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-sm);
+  /* Privacy & terms vocabulary: small uppercase letter-spaced Noto
+     Sans, faint default, accent cream on hover. No underline, no
+     frame, no italic — just the tracking. */
+  font-family: var(--font-display);
+  font-style: normal;
+  font-size: var(--fs-xs);
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--color-text-faint);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  /* overflow:hidden + transitioned max-height lets the button grow
+     itself into view, which naturally pushes the card taller as it
+     opens. Without `overflow: hidden` the max-height clamp wouldn't
+     actually clip the text mid-animation. */
+  overflow: hidden;
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    opacity var(--dur-normal) var(--ease-out);
+  /* Mount keyframe — first paint after the slot's first save. The
+     `both` keyword holds the from-state for frame 0 so the card
+     doesn't flash at full height before the animation begins. */
+  animation: slot-edit-fade-in var(--dur-slow) var(--ease-out) both;
+}
+
+@keyframes slot-edit-fade-in {
+  from {
+    opacity: 0;
+    letter-spacing: 0.32em;
+    transform: translateY(-2px);
+    filter: blur(2px);
+    /* Collapsed box — the slot-actions parent (flex column) shrinks
+       to fit, so the surrounding card visibly grows as these values
+       relax to their final state. */
+    max-height: 0;
+    margin-top: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+  to {
+    opacity: 1;
+    letter-spacing: 0.16em;
+    transform: translateY(0);
+    filter: blur(0);
+    max-height: 3rem;
+    margin-top: var(--space-1);
+    padding-top: var(--space-1);
+    padding-bottom: var(--space-1);
+  }
+}
+
+.slot-edit-link:hover:not(:disabled),
+.slot-edit-link:active:not(:disabled) {
+  color: var(--color-accent);
+}
+
+.slot-edit-link:focus-visible {
+  outline: none;
+  color: var(--color-accent);
+  box-shadow: 0 0 0 2px oklch(0.88 0.05 75 / 0.28);
+}
+
+.slot-edit-link:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Ghost variant of the primary button — used as the Edit affordance
+   when a slot is locked. Same dimensions and family as .primary-btn
+   but transparent fill + accent outline so it reads as a secondary
+   action against the (just-saved) slot below it. */
+.primary-btn--ghost {
+  background: transparent;
+  color: var(--color-accent);
+  border: 1px solid oklch(0.88 0.05 75 / 0.45);
+  box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.04);
+}
+
+.primary-btn--ghost:hover:not(:disabled) {
+  background: oklch(0.88 0.05 75 / 0.08);
+  border-color: oklch(0.88 0.05 75 / 0.7);
+}
+
+.primary-btn--ghost:active:not(:disabled) {
+  filter: brightness(0.94);
+}
+
+.primary-btn--ghost:focus-visible {
+  outline: none;
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 0.04),
+    0 0 0 3px oklch(0.88 0.05 75 / 0.32);
+}
+
 /* --- Mood UI ---------------------------------------------------------- */
 
 .mood-grid {
@@ -2008,11 +2527,14 @@ body.is-admin-route #root {
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   /* No spring on the button itself — keeps the press feel grounded.
-     The spring is reserved for the inner number on active. */
+     The spring is reserved for the inner number on active. Opacity
+     is in the list too so the locked-state dim glides instead of
+     snapping when a slot saves. */
   transition:
     background var(--dur-normal) var(--ease-out),
     border-color var(--dur-normal) var(--ease-out),
     color var(--dur-normal) var(--ease-out),
+    opacity var(--dur-normal) var(--ease-out),
     transform 140ms var(--ease-out),
     box-shadow var(--dur-normal) var(--ease-out);
 }
@@ -2095,10 +2617,13 @@ body.is-admin-route #root {
   font-size: var(--fs-sm);
   line-height: 1.55;
   resize: none;
+  /* color and background in the transition so the locked-state
+     read-only swap glides instead of snapping. */
   transition:
     border-color var(--dur-fast) var(--ease-out),
     box-shadow var(--dur-fast) var(--ease-out),
-    background var(--dur-fast) var(--ease-out);
+    background var(--dur-normal) var(--ease-out),
+    color var(--dur-normal) var(--ease-out);
 }
 
 .mood-note__input::placeholder {
@@ -2277,12 +2802,29 @@ body.is-admin-route #root {
   box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.08);
 }
 
-.primary-btn[data-status='saved'] {
-  background: var(--color-success);
-  box-shadow:
-    inset 0 1px 0 oklch(1 0 0 / 0.18),
-    0 0 28px var(--color-success),
-    0 4px 12px oklch(0 0 0 / 0.3);
+/* No special "saved" treatment — the button just transitions to its
+   disabled state (handled by .primary-btn:disabled). The smooth
+   opacity ramp on .primary-btn carries the feedback. */
+
+/* Crossfade the verb inside the button (e.g. "Save mood" →
+   "Update mood" after the first save). React's `key={...}` on the
+   span unmounts the old label and mounts a fresh one — this
+   keyframe fades the fresh label in slowly so the change doesn't
+   register as a snap. */
+.primary-btn__label {
+  display: inline-block;
+  animation: primary-btn-label-in var(--dur-slow) var(--ease-out) both;
+}
+
+@keyframes primary-btn-label-in {
+  from {
+    opacity: 0;
+    filter: blur(2px);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+  }
 }
 
 /* --- Bottom tab bar (Apple-style glass) ----------------------------- */
@@ -2295,9 +2837,12 @@ body.is-admin-route #root {
   height: calc(var(--tab-bar-height) + var(--safe-bottom));
   padding: 0 var(--space-2) var(--safe-bottom);
   background: var(--color-surface);
-  backdrop-filter: blur(40px) saturate(180%);
-  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  /* Matches the topbar + music/lang button blur — one consistent
+     glass treatment across the whole app frame. */
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
   border-top: 1px solid oklch(1 0 0 / 0.06);
+  contain: paint;
   /* Two-step transitions on radius so the corner adapts smoothly if
      the viewport flips between mobile and desktop (e.g. rotation). */
   transition:

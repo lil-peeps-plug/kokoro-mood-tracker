@@ -3,7 +3,7 @@ import { LOCALES, useI18n } from '@/lib/i18n'
 import LegalModal from '@/components/LegalModal'
 
 const STORAGE_KEY = 'kokoro:about-dismissed'
-const EXIT_MS = 480 // matches the CSS transition on .about-backdrop / .about-card
+const EXIT_MS = 620 // matches the CSS transition on .about-backdrop / .about-card
 
 function readDismissed(): boolean {
   try {
