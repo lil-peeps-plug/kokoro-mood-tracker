@@ -134,6 +134,11 @@ export default function LogMoodView() {
   const [editing, setEditing] = useState<boolean>(false)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [countdown, setCountdown] = useState('')
+  // When all 3 slots are filled the countdown view replaces the picker.
+  // `forceEditFilled` lets the user break out of the countdown and edit
+  // a slot they already saved. Reset back to false on a successful save
+  // so the countdown naturally returns.
+  const [forceEditFilled, setForceEditFilled] = useState<boolean>(false)
 
   // Initial load — today's slot rows, RLS filters to current user.
   useEffect(() => {
@@ -282,6 +287,12 @@ export default function LogMoodView() {
     })
     setStatus('idle')
     setEditing(false)
+    // If the user broke out of the countdown to edit, drop the override
+    // now that they've saved — they land back on the countdown screen.
+    if (forceEditFilled) {
+      setForceEditFilled(false)
+      setActiveSlot(null)
+    }
     // Signal the stats hook (already mounted in StatsView under the
     // crossfade) to refetch — without this, the user has to flip the
     // range filter for new entries to appear in the charts.
@@ -304,7 +315,7 @@ export default function LogMoodView() {
     )
   }
 
-  if (allFilled) {
+  if (allFilled && !forceEditFilled) {
     return (
       <section
         key="log-thanks"
@@ -327,6 +338,13 @@ export default function LogMoodView() {
           >
             {countdown || '—'}
           </span>
+          <button
+            type="button"
+            className="slot-edit-link mood-thanks__edit"
+            onClick={() => setForceEditFilled(true)}
+          >
+            {t.logEdit}
+          </button>
         </div>
       </section>
     )
@@ -472,6 +490,19 @@ export default function LogMoodView() {
             </p>
           )}
         </div>
+      )}
+
+      {forceEditFilled && (
+        <button
+          type="button"
+          className="slot-edit-link mood-thanks__edit"
+          onClick={() => {
+            setForceEditFilled(false)
+            setActiveSlot(null)
+          }}
+        >
+          {t.logDone}
+        </button>
       )}
 
     </section>

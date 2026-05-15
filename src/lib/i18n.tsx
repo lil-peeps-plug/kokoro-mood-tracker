@@ -45,6 +45,7 @@ interface Strings {
   logSave: string
   logUpdate: string
   logEdit: string
+  logDone: string
   logSaving: string
   logSaved: string
   logThanksTitle: string
@@ -139,6 +140,7 @@ const en: Strings = {
   logSave: 'Save mood',
   logUpdate: 'Update mood',
   logEdit: 'Edit mood',
+  logDone: 'Done',
   logSaving: 'Saving…',
   logSaved: 'Saved ✓',
   logThanksTitle: 'Thank you ♡',
@@ -227,6 +229,7 @@ const ru: Strings = {
   logSave: 'Сохранить',
   logUpdate: 'Обновить',
   logEdit: 'Изменить',
+  logDone: 'Готово',
   logSaving: 'Сохраняю…',
   logSaved: 'Сохранено ✓',
   logThanksTitle: 'Спасибо ♡',
@@ -316,6 +319,7 @@ const ka: Strings = {
   logSave: 'შენახვა',
   logUpdate: 'განახლება',
   logEdit: 'რედაქტირება',
+  logDone: 'მზადაა',
   logSaving: 'ვინახავ…',
   logSaved: 'შენახულია ✓',
   logThanksTitle: 'გმადლობთ ♡',

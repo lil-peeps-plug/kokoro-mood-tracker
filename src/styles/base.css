@@ -2909,6 +2909,18 @@ body.is-admin-route #root {
   font-variant-numeric: tabular-nums;
 }
 
+/* Edit affordance on the "see you tomorrow" screen — nudge it below
+   the countdown with a touch of breathing room so it doesn't crowd
+   the time. Reuses .slot-edit-link's quiet text-link styling. */
+.mood-thanks__edit {
+  margin-top: var(--space-4);
+  /* The base .slot-edit-link mount keyframe animates max-height from 0,
+     which would clip the label briefly. The countdown view doesn't
+     need that grow-in effect (it's the first paint of the button), so
+     skip the keyframe. */
+  animation: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .mood-thanks,
   .mood-thanks__kanji {
