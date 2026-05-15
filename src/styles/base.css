@@ -2824,23 +2824,10 @@ body.is-admin-route #root {
   to   { opacity: 1; transform: translateY(0);   }
 }
 
-/* While every slot is filled today the banner's KOKORO 心 stays
-   hidden — the big 心 in the countdown card IS the app's logo for
-   the rest of the day. The morph "moved" the logo down; the banner
-   doesn't get its wordmark back until midnight resets things. */
-body.kokoro-all-filled .banner__title,
-body.kokoro-all-filled .banner__kanji {
-  opacity: 0;
-  transition: opacity var(--dur-slow) var(--ease-out);
-}
 
 @media (prefers-reduced-motion: reduce) {
   .mood-thanks-card[data-arrival='from-banner'] .mood-thanks__kanji {
     animation: none;
-  }
-  body.kokoro-all-filled .banner__title,
-  body.kokoro-all-filled .banner__kanji {
-    transition: none;
   }
 }
 
