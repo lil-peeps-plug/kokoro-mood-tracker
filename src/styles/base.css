@@ -2785,12 +2785,11 @@ body.is-admin-route #root {
 }
 
 .mood-thanks-card[data-arrival='from-banner'] .mood-thanks__kanji {
-  /* Two-step animation: first the fly-down, then the breathe.
-     Breathe is delayed by the full arrival duration so the two
-     never overlap. */
-  animation:
-    kanji-fly-from-banner 1100ms var(--ease-out) both,
-    mood-thanks-breathe 3.2s var(--ease-glide) 1100ms infinite;
+  /* Fly down from the banner and stop there. No breathe loop after —
+     the user asked for a still, settled finale rather than a
+     pulsing one. `both` keeps the final keyframe applied so the
+     glow + scale stay locked in. */
+  animation: kanji-fly-from-banner 1100ms var(--ease-out) both;
 }
 
 @keyframes kanji-fly-from-banner {
@@ -2825,27 +2824,23 @@ body.is-admin-route #root {
   to   { opacity: 1; transform: translateY(0);   }
 }
 
-/* Banner fade — the wordmark dips out as the kanji "leaves it" and
-   eases back in once the countdown kanji has landed. The visual lie
-   is that the same glyph moved; in fact there are two and one is
-   briefly invisible. */
-body.kokoro-arriving-from-banner .banner__title,
-body.kokoro-arriving-from-banner .banner__kanji {
-  animation: banner-fade-during-arrival 1100ms var(--ease-out) both;
-}
-
-@keyframes banner-fade-during-arrival {
-  0%   { opacity: 0.92; transform: translateY(0);    }
-  20%  { opacity: 0;    transform: translateY(-2px); }
-  75%  { opacity: 0;    transform: translateY(0);    }
-  100% { opacity: 0.92; transform: translateY(0);    }
+/* While every slot is filled today the banner's KOKORO 心 stays
+   hidden — the big 心 in the countdown card IS the app's logo for
+   the rest of the day. The morph "moved" the logo down; the banner
+   doesn't get its wordmark back until midnight resets things. */
+body.kokoro-all-filled .banner__title,
+body.kokoro-all-filled .banner__kanji {
+  opacity: 0;
+  transition: opacity var(--dur-slow) var(--ease-out);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .mood-thanks-card[data-arrival='from-banner'] .mood-thanks__kanji,
-  body.kokoro-arriving-from-banner .banner__title,
-  body.kokoro-arriving-from-banner .banner__kanji {
+  .mood-thanks-card[data-arrival='from-banner'] .mood-thanks__kanji {
     animation: none;
+  }
+  body.kokoro-all-filled .banner__title,
+  body.kokoro-all-filled .banner__kanji {
+    transition: none;
   }
 }
 
@@ -2993,6 +2988,11 @@ body.kokoro-arriving-from-banner .banner__kanji {
 .tab-bar {
   position: relative;
   flex: 0 0 auto;
+  /* Explicit z-index — without one, the tab bar defaults to z:auto
+     and got intermittently eclipsed by the viewstack's animated
+     children (the cards mount with translate+blur keyframes that
+     create stacking contexts). z:5 sits above topbar (z:4) too. */
+  z-index: 5;
   display: grid;
   grid-template-columns: 1fr 1fr;
   height: calc(var(--tab-bar-height) + var(--safe-bottom));
@@ -3003,7 +3003,6 @@ body.kokoro-arriving-from-banner .banner__kanji {
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   border-top: 1px solid oklch(1 0 0 / 0.06);
-  contain: paint;
   /* Two-step transitions on radius so the corner adapts smoothly if
      the viewport flips between mobile and desktop (e.g. rotation). */
   transition:

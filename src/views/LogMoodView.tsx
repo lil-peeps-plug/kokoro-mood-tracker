@@ -203,6 +203,17 @@ export default function LogMoodView() {
     }
   }, [arrivingFromBanner])
 
+  // While every slot for today is filled, the countdown view is the
+  // user's whole world — the banner's KOKORO + 心 wordmark is
+  // redundant (the big 心 in the card IS the logo for now). Toggle a
+  // body class so the banner can hide its wordmark in CSS.
+  useEffect(() => {
+    if (allFilled) {
+      document.body.classList.add('kokoro-all-filled')
+      return () => document.body.classList.remove('kokoro-all-filled')
+    }
+  }, [allFilled])
+
   // Midnight countdown when all 3 slots are filled.
   useEffect(() => {
     if (!allFilled) return
