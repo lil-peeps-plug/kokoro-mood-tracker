@@ -1039,6 +1039,10 @@ body.is-admin-route #root {
 .viewstack {
   position: relative;
   flex: 1 1 auto;
+  /* min-height:0 is the classic flex-column gotcha — without it, a flex
+     child of an unknown-height parent can refuse to shrink below its
+     content size, breaking the scroll handoff in iOS Telegram WebView. */
+  min-height: 0;
   overflow: hidden;
 }
 
@@ -1047,6 +1051,13 @@ body.is-admin-route #root {
   inset: 0;
   display: flex;
   flex-direction: column;
+  /* Explicit touch-action: pan-y so iOS / Android WebViews route vertical
+     swipes to the scroll container even when ancestors are overflow:hidden
+     and the page itself has no body scroll. overscroll-behavior keeps the
+     scroll contained so it doesn't fall through to Telegram's swipe-down
+     dismissal when the user hits the bottom. */
+  touch-action: pan-y;
+  overscroll-behavior: contain;
   overflow-y: auto;
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
