@@ -136,7 +136,11 @@
      Falls back to 100svh — "small viewport height", the SMALLEST
      ever-visible area including any UI overlays. Safer than 100dvh
      for iOS Telegram WebView, which sometimes reports its full
-     webview height (incl. Telegram chrome) as the layout viewport. */
+     webview height (incl. Telegram chrome) as the layout viewport.
+     Older WebViews without `svh` support will skip the first line
+     and pick up the second (`100vh`), so the height chain never
+     collapses to auto — which would break the inner scroll. */
+  --tg-viewport-h:  100vh;
   --tg-viewport-h:  100svh;
 
   --safe-top:    max(env(safe-area-inset-top,    0px), var(--tg-safe-top));

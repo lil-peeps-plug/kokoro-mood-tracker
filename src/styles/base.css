@@ -1049,13 +1049,16 @@ body.is-admin-route #root {
 .view {
   position: absolute;
   inset: 0;
-  display: flex;
-  flex-direction: column;
-  /* Explicit touch-action: pan-y so iOS / Android WebViews route vertical
-     swipes to the scroll container even when ancestors are overflow:hidden
-     and the page itself has no body scroll. overscroll-behavior keeps the
-     scroll contained so it doesn't fall through to Telegram's swipe-down
-     dismissal when the user hits the bottom. */
+  /* Block layout — NOT flex. A flex column with overflow-y:auto has known
+     scroll-engagement quirks on iOS/Android Telegram WebViews when the
+     child's intrinsic height exceeds the container: in some builds the
+     child gets clipped without enabling the scrollbar, and touch swipes
+     just no-op. Block + overflow-y:auto is the boring-but-reliable
+     scroll-container pattern. */
+  display: block;
+  /* Explicit touch-action: pan-y so mobile WebViews route vertical swipes
+     to this scroll container. overscroll-behavior keeps the scroll
+     contained so it doesn't fall through to Telegram's swipe-down dismiss. */
   touch-action: pan-y;
   overscroll-behavior: contain;
   overflow-y: auto;
